@@ -73,9 +73,10 @@ for childdir in sorted(os.listdir(dir), key=extract_numeric_prefix):
                 count += 1
                 pbar.update(1)
             except (pickle.UnpicklingError, IOError, OSError) as e:
-                print(f"Error processing file {file_path}: {e}")
+                print(f"Error processing the file {file_path}: {e}")
                 continue
 
 pbar.close()
 print(f'Final count is: {count}')
+
 
