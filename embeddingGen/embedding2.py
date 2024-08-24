@@ -42,7 +42,7 @@ def generateEmbedding(text):
         dugast_vmi, 
         average_word_length, 
         prosodic_patterns, 
-        ratio_of_inverted_structures,
+        compute_inversion_frequencies,
         clauses_per_sentence,
         modifiers_per_noun_phrase, 
         coordinated_phrases_per_sentence,

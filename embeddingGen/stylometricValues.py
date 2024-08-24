@@ -189,6 +189,7 @@ def modifiers_per_noun_phrase(doc):
         noun_phrases = [word for word in sentence.words if word.upos == 'NOUN' or word.upos == 'PROPN']
         
         if not noun_phrases:
+            print(f"DEBUG: No noun phrases found in sentence: {sentence.text}")
             continue
         
         total_noun_phrases += len(noun_phrases)
@@ -196,13 +197,17 @@ def modifiers_per_noun_phrase(doc):
         
         for noun_phrase in noun_phrases:
             modifiers = [word for word in sentence.words if word.deprel in modifier_relations and word.head == noun_phrase.id]
+            print(f"DEBUG: Noun phrase '{noun_phrase.text}' has {len(modifiers)} modifiers.")
             total_modifiers += len(modifiers)
     
     
     if total_noun_phrases == 0:
-        return 0  
+        print("DEBUG: No noun phrases found in the entire document.")
+        return 0  # Avoid division by zero if there are no noun phrases
 
     avg_modifiers_per_noun_phrase = total_modifiers / total_noun_phrases
+    
+    print(f"DEBUG: Total noun phrases = {total_noun_phrases}, Total modifiers = {total_modifiers}, Average = {avg_modifiers_per_noun_phrase}")
     
     return avg_modifiers_per_noun_phrase
 
@@ -446,6 +451,7 @@ def yules_k_characteristic(doc):
     total_words = len(words)
     
     if total_words == 0:
+        print("DEBUG: No words found in the document.")
         return 0
     
     
@@ -462,8 +468,13 @@ def yules_k_characteristic(doc):
     
     M2 = sum(freq ** 2 for freq in frequency_distribution.values())
     
+    # Debug print to check intermediate values
+    print(f"DEBUG: M1 = {M1}, M2 = {M2}, Frequency distribution = {frequency_distribution}")
     
+    # Calculate Yule's K
     yules_k = 10**4 * (M1 - M2) / (M2 ** 2)
+    
+    print(f"DEBUG: Yule's K = {yules_k}")
     
     return yules_k
 
@@ -867,10 +878,7 @@ def is_fronted_adverbial(word, sentence, pos_tags=None, dep_rels=None, clause_bo
     return False
 
 def calculate_fronted_adverbial_ratio(doc, pos_tags=None, dep_rels=None, clause_boundary_tags=None):
-    """
-    Calculate the ratio of sentences with fronted adverbials in a given text,
-    with flexibility for POS tags, dependency relations, and clause boundary analysis.
-    """
+
     fronted_adverbials = 0
     total_sentences = len(doc.sentences)
 
@@ -888,37 +896,65 @@ def calculate_fronted_adverbial_ratio(doc, pos_tags=None, dep_rels=None, clause_
     
     ratio = fronted_adverbials / total_sentences if total_sentences > 0 else 0
     return ratio
+
 def is_inverted_structure(sentence):
 
-    
-    subject_position = None
-    verb_position = None
+
+    subject_positions = []
+    verb_positions = []
+    expletive_positions = []
+    emphatic_positions = []
 
     for i, word in enumerate(sentence.words):
-        if word.deprel in ('nsubj', 'nsubjpass'):
-            subject_position = i
+        if word.deprel in ('nsubj', 'nsubjpass', 'csubj', 'csubjpass'):
+            subject_positions.append(i)
         elif word.deprel == 'root':
-            verb_position = i
+            verb_positions.append(i)
+        elif word.deprel == 'expl':  # Handling expletives like 'there is', 'it is', etc.
+            expletive_positions.append(i)
+        elif word.deprel == 'advmod' and word.text.lower() in ('here', 'there'):  # Emphatic or location-based inversions
+            emphatic_positions.append(i)
 
-    
-    if subject_position is not None and verb_position is not None:
-        
-        if subject_position > verb_position:
-            return True
+    for subj_pos in subject_positions:
+        for verb_pos in verb_positions:
+            if subj_pos > verb_pos:
+                return "classic_inversion"
 
-    return False
+    if expletive_positions and verb_positions:
+        for expl_pos in expletive_positions:
+            for verb_pos in verb_positions:
+                if expl_pos < verb_pos:
+                    return "expletive_inversion"
 
-def ratio_of_inverted_structures(doc):
-    sentences = doc.sentences
+    if emphatic_positions and subject_positions:
+        for emph_pos in emphatic_positions:
+            for subj_pos in subject_positions:
+                if emph_pos < subj_pos:
+                    return "emphatic_inversion"
+
+    return None
+
+def compute_inversion_frequencies(doc):
+
+    inversion_counts = {
+        "classic_inversion": 0,
+        "expletive_inversion": 0,
+        "emphatic_inversion": 0
+    }
     
-    if not sentences:
-        return 0.0
+    total_sentences = len(doc.sentences)
+
+    if total_sentences == 0:
+        return {key: 0.0 for key in inversion_counts}
+
+    for sentence in doc.sentences:
+        inversion_type = is_inverted_structure(sentence)
+        if inversion_type:
+            inversion_counts[inversion_type] += 1
+
+    normalized_frequencies = {key: count / total_sentences for key, count in inversion_counts.items()}
     
-    inverted_count = sum(1 for sentence in sentences if is_inverted_structure(sentence))
-    
-    ratio = inverted_count / len(sentences)
-    
-    return ratio
+    return normalized_frequencies
 
 def is_initial_conjunction(token, sentence):
     
@@ -951,14 +987,20 @@ def calculate_embedded_clause_ratio(doc):
     embedded_clauses = 0
     total_sentences = len(doc.sentences)
 
+    if total_sentences == 0:
+        print("DEBUG: No sentences found in the document.")
+        return 0.0
+
     for sent in doc.sentences:
         has_embedded_clause = any(is_embedded_clause(token) for token in sent.words)
+        print(f"DEBUG: Sentence '{sent.text}' has embedded clause: {has_embedded_clause}")
         if has_embedded_clause:
             embedded_clauses += 1
 
-    
-    ratio = embedded_clauses / total_sentences if total_sentences > 0 else 0
+    ratio = embedded_clauses / total_sentences
+    print(f"DEBUG: Total sentences = {total_sentences}, Sentences with embedded clauses = {embedded_clauses}, Ratio = {ratio}")
     return ratio
+
 
 def estimated_stressed_syllables(word):
 
@@ -1411,7 +1453,6 @@ def calculate_cumulative_syntactic_complexity(doc):
     return complexity_score
 
 def average_syntactic_branching_factor(doc):
-    """Calculate the syntactic branching factor of a document."""
     total_branches = 0
     for sentence in doc.sentences:
         
