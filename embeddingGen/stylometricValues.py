@@ -3,14 +3,14 @@ import re
 import math  
 import numpy as np  
 import textstat
-from readability import Readability
+from readability import getmeasures
 from collections import Counter, defaultdict
-# Download and set up the Stanza pipeline (you can specify the language if needed)
-stanza.download('en')  # Download the English model
-# Initialize the Stanza pipeline with required processors
+
+stanza.download('en')  
+
 nlp = stanza.Pipeline('en', processors='tokenize,mwt,pos,lemma,depparse,ner')
 from wordfreq import word_frequency
-from scipy.optimize import curve_fit  # For fitting the Zipfian model
+from scipy.optimize import curve_fit  
 from wordtangible import word_concreteness, avg_text_concreteness, concrete_abstract_ratio
 import nltk
 nltk.download('punkt_tab')
@@ -177,11 +177,6 @@ def clauses_per_sentence(doc):
     
     return avg_clauses_per_sentence
 
-
-
-
-
-
 def modifiers_per_noun_phrase(doc):
     total_modifiers = 0
     total_noun_phrases = 0
@@ -251,27 +246,6 @@ def sentence_length_variation(doc):
 
     return std_dev
 
-def honores_statistic(doc):
-        
-    words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
-    
-    
-    total_words = len(words)
-    
-    
-    unique_words = len(set(words))
-    
-    
-    hapax_legomena = sum(1 for word in set(words) if words.count(word) == 1)
-    
-    if total_words == 0 or unique_words == 0:
-        return 0.0
-    
-    
-    honores_r_value = 100 * (math.log(total_words)) / (1 - (hapax_legomena / unique_words))
-    
-    return honores_r_value
-
 def maas_index(doc):
         
     words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
@@ -311,9 +285,9 @@ def clause_length_variation(doc):
     clause_lengths = [len(clause) for clause in clauses]
     
     if not clause_lengths:
-        return 0  # Return 0 if there are no clauses
+        return 0  
     
-    # Calculate the standard deviation of clause lengths
+    
     std_dev = np.std(clause_lengths)
     return std_dev
 
@@ -326,11 +300,9 @@ def subordination_index(doc):
     if total_clauses == 0:
         return 0
     
-    # Calculate Subordination Index
+    
     subordination_index = subordinate_clauses / total_clauses
     return subordination_index
-
-
 
 def compute_sentence_depth(sentence):
  
@@ -338,8 +310,8 @@ def compute_sentence_depth(sentence):
         if word_id in depth_map:
             return depth_map[word_id]
         
-        word = sentence.words[word_id - 1]  # Stanza uses 1-based indexing
-        if word.head == 0:  # Root node
+        word = sentence.words[word_id - 1]  
+        if word.head == 0:  
             depth = 0
         else:
             depth = 1 + get_depth(word.head, depth_map)
@@ -707,7 +679,7 @@ def lexical_density(doc):
 
 def is_passive_voice(sentence):
 
-    # Passive voice is often marked by the 'auxpass' dependency relation in Stanza
+    
     has_auxpass = any(word.deprel == 'auxpass' for word in sentence.words)
     has_vbn = any(word.upos == 'VERB' and word.feats and 'VerbForm=Part' in word.feats for word in sentence.words)
 
@@ -719,10 +691,10 @@ def ratio_of_passive_voice(doc):
     if not sentences:
         return 0.0
     
-    # Count the number of passive voice sentences
+    
     passive_count = sum(1 for sentence in sentences if is_passive_voice(sentence))
     
-    # Calculate the ratio of passive voice sentences
+    
     ratio = passive_count / len(sentences)
     
     return ratio
@@ -758,24 +730,23 @@ def ratio_of_cleft_sentences(doc):
     
     return ratio
 
-
 def count_assonance(text):
 
     vowels = 'aeiou'
     assonance_count = 0
     words = text.split()
     
-    # Get the phonetic representation of each word
+    
     phonetic_words = {word: pronouncing.phones_for_word(word) for word in words}
     
     for i in range(len(words) - 1):
         word1, word2 = words[i].lower(), words[i + 1].lower()
         
-        # Get phonetic representations
+        
         phones1 = phonetic_words.get(word1, [])
         phones2 = phonetic_words.get(word2, [])
         
-        # Check for common vowel sounds
+        
         for phone1 in phones1:
             for phone2 in phones2:
                 if any(vowel in phone1 and vowel in phone2 for vowel in vowels):
@@ -796,7 +767,7 @@ def count_alliteration(text):
     alliteration_count = 0
     words = text.split()
     
-    # Get the phonetic representation of each word
+    
     phonetic_words = {word: pronouncing.phones_for_word(word) for word in words}
     
     for i in range(len(words) - 1):
@@ -867,31 +838,59 @@ def prosodic_patterns(doc):
         return np.std(sentence_lengths)
     return 0.0
 
-def is_fronted_adverbial(token, sentence):
-    # Check if the token is at the start of the sentence
-    if token.id == sentence[0].id:
-        # Check if it's an adverbial modifier
-        if token.deprel in {"advmod", "nmod", "prep"} and token.head.pos in {"VERB", "AUX"}:
-            return True
+def is_fronted_adverbial(word, sentence, pos_tags=None, dep_rels=None, clause_boundary_tags=None):
+
+    
+    if pos_tags is None:
+        pos_tags = {"VERB", "AUX"}
+    if dep_rels is None:
+        dep_rels = {"advmod", "nmod", "obl", "prep", "mark", "acl", "advcl", "xcomp"}
+    if clause_boundary_tags is None:
+        clause_boundary_tags = {"CCONJ", "PUNCT"}  
+
+    
+    if word.id == 1 or word.id == 2:
+        
+        if hasattr(word, 'deprel') and hasattr(word, 'head'):
+            head_word = sentence[word.head - 1] if isinstance(word.head, int) and 0 < word.head <= len(sentence) else None
+            if word.deprel in dep_rels and head_word and hasattr(head_word, 'upos') and head_word.upos in pos_tags:
+                return True
+
+    
+    for i, w in enumerate(sentence[:5]):  
+        if hasattr(w, 'deprel') and hasattr(w, 'head'):
+            head_word = sentence[w.head - 1] if isinstance(w.head, int) and 0 < w.head <= len(sentence) else None
+            if w.deprel in dep_rels and head_word and hasattr(head_word, 'upos') and head_word.upos in pos_tags:
+                if i == 0 or (i > 0 and hasattr(sentence[i-1], 'upos') and sentence[i-1].upos in clause_boundary_tags):
+                    return True
+
     return False
 
-def calculate_fronted_adverbial_ratio(doc):
+def calculate_fronted_adverbial_ratio(doc, pos_tags=None, dep_rels=None, clause_boundary_tags=None):
+    """
+    Calculate the ratio of sentences with fronted adverbials in a given text,
+    with flexibility for POS tags, dependency relations, and clause boundary analysis.
+    """
     fronted_adverbials = 0
     total_sentences = len(doc.sentences)
 
     for sent in doc.sentences:
-        for token in sent.tokens:
-            if is_fronted_adverbial(token, sent.tokens):
-                fronted_adverbials += 1
-                break  # Only count one fronted adverbial per sentence
+        
+        if is_fronted_adverbial(sent.words[0], sent.words, pos_tags, dep_rels, clause_boundary_tags):
+            fronted_adverbials += 1
+        else:
+            
+            for word in sent.words[1:5]:  
+                if is_fronted_adverbial(word, sent.words, pos_tags, dep_rels, clause_boundary_tags):
+                    fronted_adverbials += 1
+                    break
 
-    # Normalize to the range [0, 1]
+    
     ratio = fronted_adverbials / total_sentences if total_sentences > 0 else 0
     return ratio
-
 def is_inverted_structure(sentence):
 
-    # Initialize flags for subject and verb positions
+    
     subject_position = None
     verb_position = None
 
@@ -922,9 +921,9 @@ def ratio_of_inverted_structures(doc):
     return ratio
 
 def is_initial_conjunction(token, sentence):
-    # Check if the token is at the start of the sentence
+    
     if token.id == sentence[0].id:
-        # Check if the token is a conjunction
+        
         if token.pos == 'CC':
             return True
     return False
@@ -938,9 +937,9 @@ def calculate_initial_conjunction_ratio(doc):
         for token in sent.tokens:
             if is_initial_conjunction(token, sent.tokens):
                 initial_conjunctions += 1
-                break  # Only count one conjunction per sentence
+                break  
 
-    # Normalize to the range [0, 1]
+    
     ratio = initial_conjunctions / total_sentences if total_sentences > 0 else 0
     return ratio
 
@@ -957,31 +956,18 @@ def calculate_embedded_clause_ratio(doc):
         if has_embedded_clause:
             embedded_clauses += 1
 
-    # Normalize to the range [0, 1]
+    
     ratio = embedded_clauses / total_sentences if total_sentences > 0 else 0
     return ratio
-
-def count_syllables(word):
-
-    word = word.lower()
-    pronunciations = pronouncing.phones_for_word(word)
-    if pronunciations:
-        # Get the first pronunciation option (usually the most common)
-        pronunciation = pronunciations[0]
-        # Extract syllables from the pronunciation
-        syllables = len(pronunciation.split()) - pronunciation.count('0')
-        return syllables
-    else:
-        return 0
 
 def estimated_stressed_syllables(word):
 
     word = word.lower()
     pronunciations = pronouncing.phones_for_word(word)
     if pronunciations:
-        # Get the first pronunciation option (usually the most common)
+        
         pronunciation = pronunciations[0]
-        # Extract stress patterns (1 = stressed, 0 = unstressed)
+        
         stress_count = sum(1 for phoneme in pronunciation.split() if phoneme[-1].isdigit() and phoneme[-1] in '12')
         return stress_count
     else:
@@ -1008,49 +994,45 @@ def get_stress_pattern(word):
     
     pronunciations = pronouncing.phones_for_word(word)
     if pronunciations:
-        # Use the first pronunciation option
+        
         pronunciation = pronunciations[0]
-        # Extract stress patterns from the pronunciation
+        
         for phone in pronunciation.split():
-            # Stress is indicated by digit in the phone (e.g., '1', '2')
-            if phone[-1] in '12':  # '1' and '2' indicate stressed syllables
+            
+            if phone[-1] in '12':  
                 stress_patterns.append(1)
             else:
                 stress_patterns.append(0)
     
     return stress_patterns
 
-def generate_syllable_stress(text):
-    words = text.split()
+def pairwise_variability_index(doc):
+
+
+    words = [word.text.lower() for sentence in doc.sentences for word in sentence.words if word.text.isalpha()]
     stress_patterns = []
     
     for word in words:
         stress_patterns.extend(get_stress_pattern(word))
-    
-    return stress_patterns
 
-def pairwise_variability_index(stress_patterns):
+
     if len(stress_patterns) < 2:
         return 0.0
     
-    # Calculate pairwise differences
+    
     differences = [abs(stress_patterns[i] - stress_patterns[i + 1]) for i in range(len(stress_patterns) - 1)]
     
-    # Calculate the average difference
+    
     average_difference = np.mean(differences)
     
-    # Normalize the PVI to the range 0-1
-    max_possible_difference = 1
-    normalized_pvi = average_difference / max_possible_difference
     
-    return normalized_pvi
-
-def rhythmic_variability(text):
-    stress_patterns = generate_syllable_stress(text)
-    return pairwise_variability_index(stress_patterns)
+    
+    
+    
+    return average_difference
 
 def contains_embedded_clause(sentence):
-    # Check if there are any dependent clauses in the sentence
+    
     for word in sentence.words:
         if word.deprel in ['acl', 'advcl', 'ccomp', 'xcomp']:
             return True
@@ -1081,7 +1063,7 @@ def calculate_noun_overlap(doc):
     return overlap_count / len(doc.sentences) if len(doc.sentences) > 0 else 0
 
 def is_rare(word, threshold=0.001):
-    # Get the frequency of the word
+    
     freq = word_frequency(word, 'en')
     
     return freq < threshold
@@ -1124,47 +1106,11 @@ def compute_zipfian_loss(doc):
     
     return loss_value
 
-def calculate_word_concreteness(doc):
-
-    words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
-    scores = [word_concreteness(word) for word in words]
-    return scores
-
 def average_text_concreteness(text):
         return avg_text_concreteness(text)
 
 def ratio_concrete_to_abstract(text):
         return concrete_abstract_ratio(text)
-
-def is_fronted_adverbial(sentence):
-        
-    words = [word.text.lower() for word in sentence.words]
-    pos_tags = [word.pos for word in sentence.words]
-    
-    
-    
-    fronted_adverbials = ['rb', 'rbr', 'rbs', 'in']
-    
-    if len(sentence.words) > 0:
-        
-        first_word_pos = sentence.words[0].pos
-        if first_word_pos in fronted_adverbials:
-            return True
-    
-    return False
-
-def ratio_of_fronted_adverbials(doc):
-
-    sentences = doc.sentences
-    
-    if not sentences:
-        return 0.0
-    
-    fronted_adverbial_count = sum(1 for sentence in sentences if is_fronted_adverbial(sentence))
-    
-    ratio = fronted_adverbial_count / len(sentences)
-    
-    return ratio
 
 def pronoun_sentence_opening_ratio(doc):
     total_sentences = len(doc.sentences)
@@ -1175,12 +1121,12 @@ def pronoun_sentence_opening_ratio(doc):
         if first_word_pos == 'PRON':
             initial_pronouns += 1
 
-    # Calculate the ratio of sentences starting with a pronoun
+    
     ratio = initial_pronouns / total_sentences if total_sentences > 0 else 0
     return ratio
 
 def is_sentence_initial_conjunction(sentence):
-    # Extract the POS tag of the first word
+    
     if len(sentence.words) > 0:
         first_word_pos = sentence.words[0].pos
         
@@ -1203,12 +1149,11 @@ def ratio_of_sentence_initial_conjunctions(doc):
     return ratio
 
 def summer_index(doc):
-  
-    words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
+
+    words = [word.text.lower() for sentence in doc.sentences for word in sentence.words if word.upos != "PUNCT"]
     
     
     total_words = len(words)
-    
     if total_words == 0:
         return 0
     
@@ -1219,19 +1164,25 @@ def summer_index(doc):
     ttr = unique_words / total_words
     
     
-    syllable_counts = [count_syllables(word) for word in words]
-    total_syllables = sum(syllable_counts)
-    average_syllables_per_word = total_syllables / total_words if total_words > 0 else 0
+    total_syllables = 0
+    for word in words:
+        pronunciations = pronouncing.phones_for_word(word)
+        if pronunciations:
+            syllable_count = pronouncing.syllable_count(pronunciations[0])
+        else:
+            
+            syllable_count = max(1, len(word) // 3)
+        total_syllables += syllable_count
     
-    # Compute Summer's Index
-    summer_index_value = 1 / (1 + math.log10(ttr + 1e-10))  # Added small constant to avoid log(0)
     
-    # Optionally, incorporate syllables into the index calculation
-    # For demonstration, let's just return the Summer's Index; 
-    # adjust this part if you want to incorporate syllables in a specific way.
+    avg_syllables_per_word = total_syllables / total_words
     
-    return summer_index_value
-
+    
+    base_index = 1 / (1 + math.log10(ttr + 1e-10))  
+    syllable_factor = math.log(avg_syllables_per_word + 1, 2)  
+    enhanced_index = base_index * syllable_factor
+    
+    return enhanced_index
 
 def is_figurative(sent):
 
@@ -1253,8 +1204,9 @@ def figurative_vs_literal_ratio(doc):
     total_sentences = len(doc.sentences)
     
     return figurative_count / total_sentences if total_sentences > 0 else 0.0
+
 def complex_words_rate(doc):
-    # Extract words from the processed document
+    
     words = [word.text for sentence in doc.sentences for word in sentence.words]
     
     
@@ -1271,12 +1223,19 @@ def complex_words_rate(doc):
     
     return complex_words_rate
 
-def dale_chall_complex_words_rate(text):
-        
-    total_words = len(text.split())
+def dale_chall_complex_words_rate(doc):
+ 
+    
+    words = [word.text.lower() for sentence in doc.sentences for word in sentence.words if word.upos != "PUNCT"]
+    
+    
+    total_words = len(words)
     
     if total_words == 0:
         return 0.0
+    
+    
+    text = ' '.join(words)
     
     
     dale_chall_complex_words = textstat.difficult_words(text)
@@ -1312,7 +1271,7 @@ def sentence_type_ratio(doc):
     total_sentences = len(doc.sentences)
     
     for sentence in doc.sentences:
-        # Count the number of clauses
+        
         num_clauses = sum(1 for word in sentence.words if word.deprel in ['ccomp', 'acl', 'advcl'])
         
         if num_clauses > 1:
@@ -1347,7 +1306,7 @@ def calculate_frazier_depth(sentence):
     def build_tree(words):
         tree = {word.id: [] for word in words}
         for word in words:
-            if word.head != 0:  # not root
+            if word.head != 0:  
                 tree[word.head].append(word.id)
         return tree
 
@@ -1357,13 +1316,13 @@ def calculate_frazier_depth(sentence):
             max_depth = max(max_depth, depth(child_id, tree, current_depth + 1))
         return max_depth
 
-    # Build the tree
+    
     dependency_tree = build_tree(sentence.words)
     
-    # Find the root
+    
     root_id = next(word.id for word in sentence.words if word.head == 0)
     
-    # Calculate the depth starting from the root node
+    
     return depth(root_id, dependency_tree, 0)
 
 def frazier_depth(doc):
@@ -1377,7 +1336,6 @@ def frazier_depth(doc):
     
     return sum(depths) / len(depths)
 
-
 def syll_per_word(doc):
 
     words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
@@ -1385,13 +1343,13 @@ def syll_per_word(doc):
     if not words:
         return 0.0
 
-    # Calculate the total number of syllables using pronouncing
+    
     total_syllables = 0
     for word in words:
         syllables = count_syllables(word)
         total_syllables += syllables
 
-    # Calculate the average syllables per word
+    
     syllables_per_word = total_syllables / len(words)
     
     return syllables_per_word
@@ -1401,16 +1359,16 @@ def count_syllables(word):
     word = word.lower()
     pronunciations = pronouncing.phones_for_word(word)
     if pronunciations:
-        # Get the first pronunciation option (usually the most common)
+        
         pronunciation = pronunciations[0]
-        # Extract syllables from the pronunciation
+        
         syllables = len(pronunciation.split()) - pronunciation.count('0')
         return syllables
     else:
         return 0
 
 def average_sentence_length(doc):
-    # Extract sentences from the processed document
+    
     sentences = [sentence for sentence in doc.sentences]
     
     
@@ -1427,16 +1385,15 @@ def average_sentence_length(doc):
     
     return average_length
 
-
 def compute_average_dependency_distance(doc):
    
     distances = []
     for sentence in doc.sentences:
         
         for word in sentence.words:
-            if word.head != 0:  # Check if the word has a head (i.e., it's not a root)
-                head_word = sentence.words[word.head - 1]  # Get the head word
-                distance = abs(word.id - head_word.id)  # Calculate dependency distance
+            if word.head != 0:  
+                head_word = sentence.words[word.head - 1]  
+                distance = abs(word.id - head_word.id)  
                 distances.append(distance)
     
     if not distances:
@@ -1446,20 +1403,21 @@ def compute_average_dependency_distance(doc):
     average_distance = np.mean(distances)
     return average_distance
 
-
 def calculate_cumulative_syntactic_complexity(doc):
     complexity_score = 0
     for sentence in doc.sentences:
-        # Increase complexity for each clause, subordination, or coordination
-        complexity_score += len([token for token in sentence.tokens if token.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"}])
+        
+        complexity_score += sum(1 for word in sentence.words if hasattr(word, 'deprel') and word.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"})
     return complexity_score
 
-def averarge_syntactic_branching_factor(doc):
+def average_syntactic_branching_factor(doc):
+    """Calculate the syntactic branching factor of a document."""
     total_branches = 0
     for sentence in doc.sentences:
-        # Count the number of branches in the parse tree
-        branches = sum(1 for token in sentence.tokens if token.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"})
+        
+        branches = sum(1 for token in sentence.words if hasattr(token, 'deprel') and token.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"})
         total_branches += branches
+    
     branching_factor = total_branches / len(doc.sentences) if len(doc.sentences) > 0 else 0
     return branching_factor
 
@@ -1469,16 +1427,17 @@ def calculate_structural_complexity_index(doc):
     total_length = 0
     
     for sentence in doc.sentences:
-        # Count number of clauses and the length of each sentence
-        total_clauses += len([token for token in sentence.tokens if token.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"}])
-        total_length += len(sentence.tokens)
+        
+        total_clauses += sum(1 for word in sentence.words if hasattr(word, 'deprel') and word.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"})
+        total_length += len(sentence.words)
     
     average_sentence_length = total_length / total_sentences if total_sentences > 0 else 0
     average_clauses_per_sentence = total_clauses / total_sentences if total_sentences > 0 else 0
     
-    # Combine features into a single index
-    # You can customize the formula based on your needs
+    
+    
     structural_complexity_index = (average_clauses_per_sentence + average_sentence_length) / 2
+    
     return structural_complexity_index
 
 def lexical_overlap(doc):
@@ -1562,8 +1521,17 @@ def frequent_delimiters_rate(doc, delimiters={',', '.', '?', '!'}):
     
     return delimiter_count / total_words
 
-def lessfrequent_delimiters_rate(doc, delimiters={';', ':', '—'}):
+def lessfrequent_delimiters_rate(doc, delimiters={';', ':'}):
+    """
+    Computes the rate of less frequent delimiters in the given processed document.
 
+    Parameters:
+        doc: The processed document from the Stanza pipeline.
+        delimiters (set): A set of less frequent delimiter characters to consider.
+
+    Returns:
+        float: The rate of less frequent delimiters.
+    """
     total_words = sum(len(sentence.words) for sentence in doc.sentences)
     
     if total_words == 0:
@@ -1584,7 +1552,7 @@ def parentheticals_and_brackets_rate(doc, delimiters={'(', ')', '[', ']'}):
     
     return delimiter_count / total_words
 
-def quotations_rate(doc, delimiters={'"', "'", '“', '”', '‘', '’', '«', '»', '‹', '›'}):
+
     total_words = sum(len(sentence.words) for sentence in doc.sentences)
     
     if total_words == 0:
@@ -1652,21 +1620,41 @@ def rix(text):
         return textstat.rix(text)
 
 def nominalization(text):
+ 
+    
+    results = getmeasures(text, lang='en')
+    
+    
+    nominalization_score = results['word usage']['nominalization']
+    
+    
+    word_count = len([word for sentence in doc.sentences for word in sentence.words])
+    
+    
+    normalized_score = nominalization_score / word_count if word_count > 0 else 0
+    
+    return normalized_score
 
-    r = Readability(text)
-    return r.nominalizations()
 
-#not sure about how applicable this level of textual granularity is....
-def preposition_usage(doc):
-    prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
-    total_words = sum(len(sentence.words) for sentence in doc.sentences)
+
+
+
+
+
+
+
+
+
+
+
+
     
-    if total_words == 0:
-        return [0.0] * len(prepositions)
+
+
     
-    preposition_counts = [sum(1 for sentence in doc.sentences for word in sentence.words if word.text.lower() == prep) for prep in prepositions]
+
     
-    return [count / total_words for count in preposition_counts]
+
 
 def detailed_conjunctions_usage(doc):
         

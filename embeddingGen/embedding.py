@@ -87,3 +87,4 @@ def generateEmbedding(text):
     ])
     
     return embedding_vector
+

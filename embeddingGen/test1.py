@@ -1,4 +1,4 @@
-from embedding import *
+from embedding2 import *
 
 def main(text):
     vector = generateEmbedding(text)
