@@ -1,111 +1,86 @@
-#from resource_loader import nlp, english_words
-from resource_loader import model, tokenizer, nlp, english_words
-import torch
-import nltk
-from transformers import GPT2LMHeadModel, GPT2TokenizerFast
-from nltk.tokenize import sent_tokenize
+from stylometricValues import *  # Ensure to import all necessary feature extraction functions
 
-import string
-from collections import Counter
-#from nltk.tokenize import RegexpTokenizer
-from nltk.tokenize import word_tokenize
-import re
-#import sklearn
-import torch
-import numpy as np 
-import string
-import math
-#import os
-#import pandas as pd
-#import seaborn as sns
-#import matplotlib.pyplot as plt
-from readability import Readability
-#import json
-
-import readability2
-
-
-
-from readability import Readability
-
-from nltk.tokenize import sent_tokenize
-#from nltk.corpus import wordnet
-
-# Download the words corpus
-#nltk.download('wordnet')
-#nltk.download('omw-1.4')
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-nltk.data.path.append('/usr/local/nltk_data')
-
-from stylometricValues import *
-
-
-def Embedding(text):
+def embedding(text):
     """
-    Generates an embedding of the text based on the selected categories.
+    Computes a stylometric embedding representation of the text.
 
     Parameters:
-    text (str): The input text.
+        text (str): The input text sample.
 
     Returns:
-    list: The embedding of the text.
+        list: A list representing the stylometric embedding of the text.
     """
-    embedding = []
+    # Process the text to get a Stanza Document object
     doc = process_text(text)
-
-    embedding.extend([
-        compute_herdans_v(text),  # I Feature
-        brunets_w(text),  # I Feature
-        yules_k_characteristic(text),  # I Feature
-        honores_r(text),  # I Feature
-        renyis_entropy(text),  # I Feature
-        hapax_dislegomena_rate(text),  # I Feature
-        perplexity(text),  # I Feature
-        burstiness(text),  # I Feature
-        average_word_length(text),  # I Feature
-        long_word_rate(text),  # I Feature
-        short_word_rate(text),  # I Feature
-        lexical_density(text),  # I Feature
-        complex_words_rate(text),
-        dale_chall_complex_words_rate(text),
-        syll_per_word(text),
-        average_sentence_length(text),  # I Feature
-        frequent_delimiters_rate(text),  # I Feature
-        lessfrequent_delimiters_rate(text),  # I Feature
-
-        parentheticals_and_brackets_rate(text),  # I Feature
-        quotations_rate(text),  # I Feature
-        dashes_and_ellipses_rate(text),  # I Feature
-        flesch_reading_ease(text),  # I Feature
-        GFI(text),  # I Feature
-        coleman_liau_index(text),  # I Feature
-        ari(text),  # I Feature
-        dale_chall(text),  # I Feature
-        lix(text),  # I Feature
-    ])
-
-    embedding.extend([nominalization(text)])
-
-        # XIV Features       prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
-    embedding.extend(preposition_usage(text))
-
-        # V Features      conjunctions = ['and', 'or', 'but', 'so', 'for']
-    embedding.extend(conjunctions_usage(text))
-
-    embedding.extend(auxiliary_infipart_modals_usage_rate(text))
-        # This functon includes the following values: (1) group1_auxiliaries = {'is', 'are', 'was', 'were', 'do', 'does', 'did'}
-        # (2) group2_auxiliaries = {'have', 'has', 'had'}
-        # (3) infinitives_participles = {'be', 'being', 'been'}
-        # (4-8)  modals = ['can', 'could', 'should', 'will', 'would', 'may', 'might', 'must']
-
-    return embedding
-
-    # V Features - Detailed Conjunctions Usage
-    conjunctions_rates = detailed_conjunctions_usage(doc)
-    embedding.extend([
-        conjunctions_rates["coordinating"],
-        conjunctions_rates["subordinating"],
-        conjunctions_rates["correlative"]
-    ])
-
-
+    
+    # Lexical richness measures
+    herdans_v = compute_herdans_v(doc)
+    brunets_w = compute_brunets_w(doc)
+    tuldava_ln_ttr = tuldava_ln_ttr(doc)
+    simpsons_idx = simpsons_index(doc)
+    sichel_s = sichel_s_measure(doc)
+    orlov_sigma = orlov_sigma(doc)
+    yules_k = yules_k_characteristic(doc)
+    honores_r = honores_r(doc)
+    renyis_entropy = renyis_entropy(doc)
+    hapax_dislegomena = hapax_dislegomena_rate(doc)
+    dugast_vmi = dugast_vmi(doc)
+    
+    # Syntactic measures
+    clauses_per_sentence = clauses_per_sentence(doc)
+    modifiers_per_noun = modifiers_per_noun_phrase(doc)
+    coordinated_phrases_per_sentence = coordinated_phrases_per_sentence(doc)
+    sentence_length_variation = sentence_length_variation(doc)
+    clause_length_variation = clause_length_variation(doc)
+    subordination_idx = subordination_index(doc)
+    avg_sentence_depth = average_sentence_depth(doc)
+    avg_dependency_distance = compute_average_dependency_distance(doc)
+    frazier_depth_value = frazier_depth(doc)
+    syntactic_branching_factor = branching_factor_for_text(doc)
+    hierarchical_structure_complexity = compute_hierarchical_structure_complexity(doc)
+    yngve_depth = compute_yngve_depth(doc)
+    
+    # Rhetorical and discourse measures
+    ratio_passive_voice = ratio_of_passive_voice(doc)
+    ratio_cleft_sentences = ratio_of_cleft_sentences(doc)
+    noun_overlap = calculate_noun_overlap(doc)
+    ratio_embedded_clauses = ratio_of_embedded_clauses(doc)
+    pronoun_sentence_opening_ratio = pronoun_sentence_opening_ratio(doc)
+    ratio_initial_conjunctions = ratio_of_sentence_initial_conjunctions(doc)
+    ratio_fronted_adverbials = ratio_of_fronted_adverbials(doc)
+    
+    # Phonological measures
+    assonance = normalized_assonance(text)
+    alliteration = normalized_alliteration(text)
+    tempo_variation = tempo_variation(doc)
+    rhythmic_complexity = rhythmic_complexity(text)
+    rhythmic_variability = rhythmic_variability(text)
+    
+    # Lexical concreteness measures
+    avg_concreteness = average_text_concreteness(text)
+    concrete_to_abstract_ratio = ratio_concrete_to_abstract(text)
+    
+    # Readability indices
+    flesch = flesch_reading_ease(text)
+    gfi = GFI(text)
+    coleman_liau = coleman_liau_index(text)
+    ari_index = ari(text)
+    dale_chall_score = dale_chall_readability_score(text)
+    lix_score = lix(text)
+    smog = smog_index(text)
+    rix_score = rix(text)
+    
+    # Combined measures into a single embedding
+    embedding_vector = [
+        herdans_v, brunets_w, tuldava_ln_ttr, simpsons_idx, sichel_s, orlov_sigma, yules_k, honores_r, 
+        renyis_entropy, hapax_dislegomena, dugast_vmi, clauses_per_sentence, modifiers_per_noun, 
+        coordinated_phrases_per_sentence, sentence_length_variation, clause_length_variation, 
+        subordination_idx, avg_sentence_depth, avg_dependency_distance, frazier_depth_value, 
+        syntactic_branching_factor, hierarchical_structure_complexity, yngve_depth, ratio_passive_voice, 
+        ratio_cleft_sentences, noun_overlap, ratio_embedded_clauses, pronoun_sentence_opening_ratio, 
+        ratio_initial_conjunctions, ratio_fronted_adverbials, assonance, alliteration, tempo_variation, 
+        rhythmic_complexity, rhythmic_variability, avg_concreteness, concrete_to_abstract_ratio, flesch, 
+        gfi, coleman_liau, ari_index, dale_chall_score, lix_score, smog, rix_score
+    ]
+    
+    return embedding_vector
