@@ -154,6 +154,9 @@ def pos_frequencies(doc):
     return pos_frequencies
 
 def clauses_per_sentence(doc):
+
+    print(type(doc))
+
     total_clauses = 0
     total_sentences = len(doc.sentences)
     
@@ -173,6 +176,11 @@ def clauses_per_sentence(doc):
     avg_clauses_per_sentence = total_clauses / total_sentences
     
     return avg_clauses_per_sentence
+
+
+
+
+
 
 def modifiers_per_noun_phrase(doc):
     total_modifiers = 0
@@ -282,71 +290,70 @@ def maas_index(doc):
     
     return maas_index_value
 
-def clause_length_variation(doc):
-    clause_lengths = []
-
-    
-    for sentence in doc.sentences:
-        
-        words = sentence.words
-        clauses = extract_clauses(words)  
-        
-        
-        for clause in clauses:
-            clause_length = len(clause)
-            clause_lengths.append(clause_length)
-    
-    if not clause_lengths:
-        return 0  
-
-    
-    std_dev = np.std(clause_lengths)
-
-    return std_dev
-
-def extract_clauses(words):
+def extract_clauses(doc):
+ 
     clauses = []
-    current_clause = []
-
-    
-    for word in words:
-        if word.deprel in {'ccomp', 'xcomp', 'acl'}:  
-            if current_clause:
-                clauses.append(current_clause)
-                current_clause = []
-        current_clause.append(word.text)
-
-    if current_clause:
-        clauses.append(current_clause)
+    for sentence in doc.sentences:
         current_clause = []
-
+        for word in sentence.words:
+            if word.deprel in {'ccomp', 'xcomp', 'acl', 'advcl', 'relcl'}:
+                if current_clause:
+                    clauses.append(current_clause)
+                current_clause = []
+            current_clause.append(word)
+        if current_clause:
+            clauses.append(current_clause)
     return clauses
 
-def subordination_index(doc):
-    clauses = extract_clauses(doc)
+def clause_length_variation(doc):
 
+    clauses = extract_clauses(doc)
+    clause_lengths = [len(clause) for clause in clauses]
+    
+    if not clause_lengths:
+        return 0  # Return 0 if there are no clauses
+    
+    # Calculate the standard deviation of clause lengths
+    std_dev = np.std(clause_lengths)
+    return std_dev
+
+def subordination_index(doc):
+
+    clauses = extract_clauses(doc)
     total_clauses = len(clauses)
     subordinate_clauses = sum(1 for clause in clauses if any(word.deprel in {'ccomp', 'xcomp', 'acl', 'advcl', 'relcl'} for word in clause))
     
     if total_clauses == 0:
         return 0
     
-    
+    # Calculate Subordination Index
     subordination_index = subordinate_clauses / total_clauses
-    
     return subordination_index
 
-def compute_sentence_depth(sentence):
-        
-    def get_depth(node, current_depth=0):
-        if not node.children:
-            return current_depth
-        return max(get_depth(child, current_depth + 1) for child in node.children)
 
-    
-    root_node = sentence.dependencies[0][0]
-    
-    return get_depth(root_node)
+
+def compute_sentence_depth(sentence):
+ 
+    def get_depth(word_id, depth_map):
+        if word_id in depth_map:
+            return depth_map[word_id]
+        
+        word = sentence.words[word_id - 1]  # Stanza uses 1-based indexing
+        if word.head == 0:  # Root node
+            depth = 0
+        else:
+            depth = 1 + get_depth(word.head, depth_map)
+        
+        depth_map[word_id] = depth
+        return depth
+
+    depth_map = {}
+    max_depth = 0
+    for word in sentence.words:
+        depth = get_depth(word.id, depth_map)
+        max_depth = max(max_depth, depth)
+
+    return max_depth
 
 def average_sentence_depth(doc):
     depths = []
@@ -751,33 +758,6 @@ def ratio_of_cleft_sentences(doc):
     
     return ratio
 
-def is_figurative(sentence):
-
-    doc = nlp(sentence)
-    figurative_clues = {"like", "as", "than", "seems", "appears", "metaphorically", "resembles", "is", "are"}
-
-    for sent in doc.sentences:
-        for word in sent.words:
-            # Check for simile patterns like "as X as" or "like Y"
-            if word.text.lower() in figurative_clues:
-                if word.deprel in {"case", "mark"} and word.text.lower() in {"like", "as"}:
-                    return True
-                if word.upos == "AUX" and word.text.lower() in {"is", "are"}:
-                    # Check for possible metaphor structure (X is Y)
-                    for child in sent.words:
-                        if child.head == word.id and child.upos in {"NOUN", "PRON"}:
-                            return True
-
-    return False
-
-def figurative_vs_literal_ratio(text):
-
-    doc = nlp(text)
-    sentences = [sentence.text for sentence in doc.sentences]
-    figurative_count = sum(is_figurative(sentence) for sentence in sentences)
-    total_sentences = len(sentences)
-    
-    return figurative_count / total_sentences if total_sentences > 0 else 0.0
 
 def count_assonance(text):
 
@@ -895,8 +875,7 @@ def is_fronted_adverbial(token, sentence):
             return True
     return False
 
-def calculate_fronted_adverbial_ratio(text):
-    doc = nlp(text)
+def calculate_fronted_adverbial_ratio(doc):
     fronted_adverbials = 0
     total_sentences = len(doc.sentences)
 
@@ -950,8 +929,8 @@ def is_initial_conjunction(token, sentence):
             return True
     return False
 
-def calculate_initial_conjunction_ratio(text):
-    doc = nlp(text)
+def calculate_initial_conjunction_ratio(doc):
+
     initial_conjunctions = 0
     total_sentences = len(doc.sentences)
 
@@ -968,8 +947,8 @@ def calculate_initial_conjunction_ratio(text):
 def is_embedded_clause(token):
     return token.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"}
 
-def calculate_embedded_clause_ratio(text):
-    doc = nlp(text)
+def calculate_embedded_clause_ratio(doc):
+
     embedded_clauses = 0
     total_sentences = len(doc.sentences)
 
@@ -1244,41 +1223,36 @@ def summer_index(doc):
     total_syllables = sum(syllable_counts)
     average_syllables_per_word = total_syllables / total_words if total_words > 0 else 0
     
+    # Compute Summer's Index
+    summer_index_value = 1 / (1 + math.log10(ttr + 1e-10))  # Added small constant to avoid log(0)
     
-    summer_index_value = 1 / (1 + math.log10(ttr + 1e-10))  
-    
-    
-    
-    
+    # Optionally, incorporate syllables into the index calculation
+    # For demonstration, let's just return the Summer's Index; 
+    # adjust this part if you want to incorporate syllables in a specific way.
     
     return summer_index_value
 
-def is_figurative(sentence):
-    doc = nlp(sentence)
+
+def is_figurative(sent):
+
     figurative_clues = {"like", "as", "than", "seems", "appears", "metaphorically", "resembles", "is", "are"}
 
-    for sent in doc.sentences:
-        for word in sent.words:
-            # Check for simile patterns like "as X as" or "like Y"
-            if word.text.lower() in figurative_clues:
-                if word.deprel in {"case", "mark"} and word.text.lower() in {"like", "as"}:
-                    return True
-                if word.upos == "AUX" and word.text.lower() in {"is", "are"}:
-                    # Check for possible metaphor structure (X is Y)
-                    for child in sent.words:
-                        if child.head == word.id and child.upos in {"NOUN", "PRON"}:
-                            return True
-
+    for word in sent.words:
+        if word.text.lower() in figurative_clues:
+            if word.deprel in {"case", "mark"} and word.text.lower() in {"like", "as"}:
+                return True
+            if word.upos == "AUX" and word.text.lower() in {"is", "are"}:
+                for child in sent.words:
+                    if child.head == word.id and child.upos in {"NOUN", "PRON"}:
+                        return True
     return False
 
-def figurative_vs_literal_ratio(text):
-    doc = nlp(text)
-    sentences = [sentence.text for sentence in doc.sentences]
-    figurative_count = sum(is_figurative(sentence) for sentence in sentences)
-    total_sentences = len(sentences)
+def figurative_vs_literal_ratio(doc):
+
+    figurative_count = sum(is_figurative(sent) for sent in doc.sentences)
+    total_sentences = len(doc.sentences)
     
     return figurative_count / total_sentences if total_sentences > 0 else 0.0
-
 def complex_words_rate(doc):
     # Extract words from the processed document
     words = [word.text for sentence in doc.sentences for word in sentence.words]
@@ -1370,23 +1344,31 @@ def sentence_type_ratio(doc):
 
 def calculate_frazier_depth(sentence):
 
-    
-    def depth(node, current_depth):
+    def build_tree(words):
+        tree = {word.id: [] for word in words}
+        for word in words:
+            if word.head != 0:  # not root
+                tree[word.head].append(word.id)
+        return tree
+
+    def depth(node_id, tree, current_depth):
         max_depth = current_depth
-        for child in node.children:
-            max_depth = max(max_depth, depth(child, current_depth + 1))
+        for child_id in tree[node_id]:
+            max_depth = max(max_depth, depth(child_id, tree, current_depth + 1))
         return max_depth
 
+    # Build the tree
+    dependency_tree = build_tree(sentence.words)
     
-    root = [word for word in sentence.words if word.deprel == 'root'][0]
+    # Find the root
+    root_id = next(word.id for word in sentence.words if word.head == 0)
     
-    
-    return depth(root, 0)
+    # Calculate the depth starting from the root node
+    return depth(root_id, dependency_tree, 0)
 
 def frazier_depth(doc):
 
     depths = []
-    
     for sentence in doc.sentences:
         depths.append(calculate_frazier_depth(sentence))
     
@@ -1394,6 +1376,7 @@ def frazier_depth(doc):
         return 0.0
     
     return sum(depths) / len(depths)
+
 
 def syll_per_word(doc):
 
@@ -1444,17 +1427,16 @@ def average_sentence_length(doc):
     
     return average_length
 
-def compute_average_dependency_distance(doc):
 
-    
+def compute_average_dependency_distance(doc):
+   
     distances = []
-    
     for sentence in doc.sentences:
         
         for word in sentence.words:
-            if word.head != 0:  
-                head_word = sentence.words[word.head - 1]  
-                distance = abs(word.index - head_word.index)  
+            if word.head != 0:  # Check if the word has a head (i.e., it's not a root)
+                head_word = sentence.words[word.head - 1]  # Get the head word
+                distance = abs(word.id - head_word.id)  # Calculate dependency distance
                 distances.append(distance)
     
     if not distances:
@@ -1462,8 +1444,8 @@ def compute_average_dependency_distance(doc):
         return 0
     
     average_distance = np.mean(distances)
-    
     return average_distance
+
 
 def calculate_cumulative_syntactic_complexity(doc):
     complexity_score = 0
@@ -1472,7 +1454,7 @@ def calculate_cumulative_syntactic_complexity(doc):
         complexity_score += len([token for token in sentence.tokens if token.deprel in {"acl", "relcl", "ccomp", "xcomp", "nsubj"}])
     return complexity_score
 
-def calculate_syntactic_branching_factor(doc):
+def averarge_syntactic_branching_factor(doc):
     total_branches = 0
     for sentence in doc.sentences:
         # Count the number of branches in the parse tree
@@ -1674,6 +1656,7 @@ def nominalization(text):
     r = Readability(text)
     return r.nominalizations()
 
+#not sure about how applicable this level of textual granularity is....
 def preposition_usage(doc):
     prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
     total_words = sum(len(sentence.words) for sentence in doc.sentences)
