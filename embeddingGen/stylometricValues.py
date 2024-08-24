@@ -1,4 +1,3 @@
-
 import stanza  
 import re  
 import math  
@@ -11,8 +10,7 @@ stanza.download('en')  # Download the English model
 # Initialize the Stanza pipeline with required processors
 nlp = stanza.Pipeline('en', processors='tokenize,mwt,pos,lemma,depparse,ner')
 from wordfreq import word_frequency
-from scipy.optimize import curve_fit  
-import matplotlib.pyplot as plt  
+from scipy.optimize import curve_fit  # For fitting the Zipfian model
 from wordtangible import word_concreteness, avg_text_concreteness, concrete_abstract_ratio
 import nltk
 nltk.download('punkt_tab')

@@ -1,6 +1,6 @@
-from stylometricValues import *  # Ensure to import all necessary feature extraction functions
+from stylometricValues import *  
 
-def embedding(text):
+def generateEmbedding(text):
     """
     Computes a stylometric embedding representation of the text.
 
@@ -10,10 +10,10 @@ def embedding(text):
     Returns:
         list: A list representing the stylometric embedding of the text.
     """
-    # Process the text to get a Stanza Document object
+    
     doc = process_text(text)
     
-    # Lexical richness measures
+    
     herdans_v = compute_herdans_v(doc)
     brunets_w = compute_brunets_w(doc)
     tuldava_ln_ttr = tuldava_ln_ttr(doc)
@@ -26,7 +26,7 @@ def embedding(text):
     hapax_dislegomena = hapax_dislegomena_rate(doc)
     dugast_vmi = dugast_vmi(doc)
     
-    # Syntactic measures
+    
     clauses_per_sentence = clauses_per_sentence(doc)
     modifiers_per_noun = modifiers_per_noun_phrase(doc)
     coordinated_phrases_per_sentence = coordinated_phrases_per_sentence(doc)
@@ -40,7 +40,7 @@ def embedding(text):
     hierarchical_structure_complexity = compute_hierarchical_structure_complexity(doc)
     yngve_depth = compute_yngve_depth(doc)
     
-    # Rhetorical and discourse measures
+    
     ratio_passive_voice = ratio_of_passive_voice(doc)
     ratio_cleft_sentences = ratio_of_cleft_sentences(doc)
     noun_overlap = calculate_noun_overlap(doc)
@@ -49,18 +49,18 @@ def embedding(text):
     ratio_initial_conjunctions = ratio_of_sentence_initial_conjunctions(doc)
     ratio_fronted_adverbials = ratio_of_fronted_adverbials(doc)
     
-    # Phonological measures
+    
     assonance = normalized_assonance(text)
     alliteration = normalized_alliteration(text)
     tempo_variation = tempo_variation(doc)
     rhythmic_complexity = rhythmic_complexity(text)
     rhythmic_variability = rhythmic_variability(text)
     
-    # Lexical concreteness measures
+    
     avg_concreteness = average_text_concreteness(text)
     concrete_to_abstract_ratio = ratio_concrete_to_abstract(text)
     
-    # Readability indices
+    
     flesch = flesch_reading_ease(text)
     gfi = GFI(text)
     coleman_liau = coleman_liau_index(text)
@@ -70,7 +70,7 @@ def embedding(text):
     smog = smog_index(text)
     rix_score = rix(text)
     
-    # Combined measures into a single embedding
+    
     embedding_vector = [
         herdans_v, brunets_w, tuldava_ln_ttr, simpsons_idx, sichel_s, orlov_sigma, yules_k, honores_r, 
         renyis_entropy, hapax_dislegomena, dugast_vmi, clauses_per_sentence, modifiers_per_noun, 
