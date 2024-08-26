@@ -448,7 +448,7 @@ def dugast_vmi(doc):
     vmi = (unique_words ** 2) / total_words
     
     return vmi
-
+#why negative? I cannot tell you why, M1 and M2 were swapped at M2-M1
 def yules_k_characteristic(doc):
     words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
     
