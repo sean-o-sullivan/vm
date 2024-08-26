@@ -4,7 +4,7 @@ import stanza
 import numpy as np
 from multiprocessing import Pool
 from embedding2 import *
-
+#lotsa plotting going on here...
 
 WINDOW_SIZE = 20
 ROOT_DIRECTORY = '/home/aiadmin/Desktop/datasets/bigText'
