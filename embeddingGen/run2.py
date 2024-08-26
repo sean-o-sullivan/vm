@@ -31,6 +31,11 @@ def process_book(file_path_author):
         print(f"Text of length {len(text)} read from {file_path}")
 
     print(f"Passing text to Stanza pipeline for tokenization...")
+
+    small_text = "This is a test text. It has a few sentences. Let's see how Stanza handles it."
+    small_doc = nlp(small_text)
+    print("Small text tokenized successfully.")
+
     doc = nlp(text)  # This is where the text is tokenized
     print(f"Tokenization completed for {file_path}")
 
