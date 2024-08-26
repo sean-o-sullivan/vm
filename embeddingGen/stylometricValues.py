@@ -194,7 +194,7 @@ def modifiers_per_noun_phrase(doc):
             continue
         
         total_noun_phrases += len(noun_phrases)
-        sentence_mod_count = 0  # Counter for modifiers in the current sentence
+        sentence_mod_count = 0  
         
         
         for noun_phrase in noun_phrases:
@@ -207,7 +207,7 @@ def modifiers_per_noun_phrase(doc):
         print(f"DEBUG: Sentence '{sentence.text}' has {sentence_mod_count} total modifiers.")
         if total_noun_phrases == 0:
             print("DEBUG: No noun phrases found in the entire document.")
-        return 0  # Avoid division by zero if there are no noun phrases
+        return 0  
 
     avg_modifiers_per_noun_phrase = total_modifiers / total_noun_phrases
     
@@ -448,11 +448,11 @@ def dugast_vmi(doc):
     vmi = (unique_words ** 2) / total_words
     
     return vmi
-#why negative? I cannot tell you why, M1 and M2 were swapped at M2-M1
+
 def yules_k_characteristic(doc):
     words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
     
-    # Calculate total number of words (tokens)
+    
     total_words = len(words)
     if total_words == 0:
         print("DEBUG: No words found in the document.")
@@ -469,16 +469,16 @@ def yules_k_characteristic(doc):
     
     M2 = sum(freq ** 2 for freq in frequency_distribution.values())
     
-    # Debug print to check intermediate values
+    
     print(f"DEBUG: M1 = {M1}, M2 = {M2}, Unique words = {len(frequency_distribution)}")
     
-    # Calculate Yule's K
+    
     if M1 == 0:
-        return 0  # Avoid division by zero
+        return 0  
     
     yules_k = 10000 * (M2 - M1) / (M1 ** 2)
     
-    # Ensure the result is non-negative
+    
     yules_k = max(0, yules_k)
     
     print(f"DEBUG: Yule's K = {yules_k}")
@@ -694,48 +694,167 @@ def lexical_density(doc):
     
     return lexical_density
 
-def is_passive_voice(sentence):
+def is_state_description(sentence):
+    copular_verbs = {'be', 'seem', 'appear', 'look', 'sound', 'smell', 'taste', 'feel', 'become', 'get'}
+    state_adjectives = {'done', 'finished', 'completed', 'solved', 'gone', 'ready'}
+    
+    return any(word.lemma.lower() in copular_verbs and word.deprel == 'cop' for word in sentence.words) and \
+           any(word.lemma.lower() in state_adjectives for word in sentence.words)
+
+def passive_confidence(sentence):
+    score = 0
+    has_aux_pass = any(word.deprel == 'aux:pass' for word in sentence.words)
+    has_nsubj_pass = any(word.deprel == 'nsubj:pass' for word in sentence.words)
+    
+    if has_aux_pass:
+        score += 0.4
+    if has_nsubj_pass:
+        score += 0.4
+    
+    has_vbn = any(
+        word.upos == 'VERB' and 
+        word.feats and 'VerbForm=Part' in word.feats and
+        not (word.deprel == 'amod' or  
+             (word.deprel == 'root' and not has_aux_pass and not has_nsubj_pass))
+        for word in sentence.words
+    )
+    if has_vbn:
+        score += 0.2
+    
+    copular_verbs = {'be', 'seem', 'appear', 'look', 'sound', 'smell', 'taste', 'feel', 'become', 'get'}
+    is_copular = any(word.lemma.lower() in copular_verbs and word.deprel == 'cop' for word in sentence.words)
+    if is_copular:
+        score -= 0.2
+    
+    
+    state_verbs = {'solve', 'finish', 'complete', 'do', 'decide', 'resolve', 'settle', 'end', 'conclude'}
+    action_verbs = {'chase', 'write', 'bake', 'sign', 'make', 'believe', 'paint', 'postpone', 
+                    'elect', 'publish', 'destroy', 'expect', 'submit', 'found', 'attend'}
+    
+    main_verb = next((word for word in sentence.words if word.upos == 'VERB' and word.deprel == 'root'), None)
+    
+    if main_verb:
+        if main_verb.lemma in state_verbs:
+            score -= 0.2
+        elif main_verb.lemma in action_verbs:
+            score += 0.1
+    
+    
+    if any(word.lemma == 'get' and word.deprel == 'aux' and 
+           any(w.feats and 'VerbForm=Part' in w.feats for w in sentence.words) 
+           for word in sentence.words):
+        score += 0.2
+    
+    
+    if any(word.lemma == 'have' and word.deprel == 'aux' and
+           any(w.lemma == 'be' for w in sentence.words) and
+           any(w.feats and 'VerbForm=Part' in w.feats for w in sentence.words)
+           for word in sentence.words):
+        score += 0.2
+    
+    
+    if any(word.lemma == 'be' and word.deprel == 'aux' and 
+           any(w.lemma == 'be' and w.feats and 'VerbForm=Part' in w.feats for w in sentence.words) 
+           for word in sentence.words):
+        score += 0.1
 
     
-    has_auxpass = any(word.deprel == 'auxpass' for word in sentence.words)
-    has_vbn = any(word.upos == 'VERB' and word.feats and 'VerbForm=Part' in word.feats for word in sentence.words)
+    if any(word.lemma == 'it' and word.deprel == 'expl' and
+           any(w.deprel == 'aux:pass' for w in sentence.words)
+           for word in sentence.words):
+        score += 0.1
+    
+    
+    if is_state_description(sentence):
+        score -= 0.3
+    
+    return max(0, min(score, 1.0))
 
-    return has_auxpass and has_vbn
+def analyze_passiveness(doc):
+    confidence_scores = [passive_confidence(sentence) for sentence in doc.sentences]
+    
+    avg_passiveness = np.mean(confidence_scores)
+    std_passiveness = np.std(confidence_scores)
+    
+    return {
+        "average_passiveness": avg_passiveness,
+        "std_passiveness": std_passiveness
+    }
 
-def ratio_of_passive_voice(doc):
-    sentences = doc.sentences
-    
-    if not sentences:
-        return 0.0
-    
-    
-    passive_count = sum(1 for sentence in sentences if is_passive_voice(sentence))
-    
-    
-    ratio = passive_count / len(sentences)
-    
-    return ratio
 
 def is_cleft_sentence(sentence):
-        
-    words = [word.text.lower() for word in sentence.words]
-    pos_tags = [word.pos for word in sentence.words]
+    words = sentence.words
+    text = ' '.join(word.text.lower() for word in words)
+    
+    
+    exclude_patterns = [
+        r'\bit\s+(is|was)\s+(obvious|clear|evident|apparent|known|understood)\s+that\b',
+        r'\bit\s+seems\s+that\b'
+    ]
+    if any(re.search(pattern, text) for pattern in exclude_patterns):
+        return False
+    
+    
+    if words[0].text.lower() == 'it':
+        cop_found = False
+        for i, word in enumerate(words[1:], start=1):
+            if word.deprel == 'cop' and word.pos == 'AUX':
+                cop_found = True
+            elif cop_found and word.pos in ['PRON', 'SCONJ'] and word.text.lower() in ['who', 'whom', 'that', 'which', 'when', 'where', 'why', 'how']:
+                return True
+        if cop_found and re.search(r'\bit\s+(is|was)\s+\w+\s+(that|who|whom|which|when|where|why|how)', text):
+            return True
+    
+    
+    wh_words = ['what', 'who', 'whom', 'which', 'where', 'when', 'why', 'how']
+    if words[0].text.lower() in wh_words:
+        for i, word in enumerate(words[1:], start=1):
+            if word.deprel == 'cop' and word.pos == 'AUX':
+                return True
+            if i < len(words) - 1 and words[i+1].deprel in ['nsubj', 'ccomp', 'xcomp', 'advcl']:
+                return True
 
     
-    cleft_indicators = ['it', 'that', 'was', 'is']
+    if any(re.search(rf'\b{wh}\s+.+?\s+(is|was|are|were)\s+.+\b', text) for wh in wh_words):
+        return True
+
     
-    
-    if 'it' in words and 'that' in words:
-        it_index = words.index('it')
-        that_index = words.index('that')
-        
-        
-        if it_index < that_index and any(word in pos_tags for word in ['AUX', 'VERB']):
-            return True
+    patterns = [
+        r'\bwhat\s+.+?\s+(is|was|are|were)\b',
+        r'\bwhere\s+\w+\s+(is|was|are|were)\b',
+        r'\bwhen\s+\w+\s+(is|was|are|were)\b',
+        r'\bwhy\s+\w+\s+(is|was|are|were)\b',
+        r'\bhow\s+\w+\s+(is|was|are|were)\b',
+        r'\bwho\s+\w+\s+(is|was|are|were)\b',
+        r'\bwhom\s+\w+\s+(is|was|are|were)\b',
+        r'\bwhich\s+\w+\s+(is|was|are|were)\b',
+        r'\b(is|was|are|were)\s+(what|where|when|why|how|who|whom|which)\b',
+        r'\bthe\s+\w+\s+(who|that|which)\s+\w+\s+(is|was|are|were)\b',
+        r'\bit\s+(is|was)\s+\w+\s+(when|where|why|how)\b',
+        r'\bthe\s+\w+\s+(when|where)\s+\w+\s+(is|was|are|were)\b',
+        r'\bwhat\s+\w+\s+(is|was)\s+.+\b',
+        r'\b(is|was)\s+the\s+\w+\s+that\s+.+\b',
+        r'\bwho\s+\w+\s+\w+\s+.+\b',
+        r'\bwhat\s+\w+\s+\w+\s+.+\b',
+        r'\bthe\s+\w+\s+is\s+\w+\s+\w+\s+.+\b',
+        r'\bthe\s+\w+\s+that\s+.+?\s+is\b',
+        r'\ball\s+\w+\s+\w+\s+.+?\s+is\b'
+    ]
+    if any(re.search(pattern, text) for pattern in patterns):
+        return True
     
     return False
 
 def ratio_of_cleft_sentences(doc):
+    """
+    Computes the ratio of cleft sentences in the given document.
+
+    Parameters:
+        doc (stanza.Document): The input document.
+
+    Returns:
+        float: The ratio of cleft sentences in the document.
+    """
     sentences = doc.sentences
     
     if not sentences:
@@ -747,8 +866,18 @@ def ratio_of_cleft_sentences(doc):
     
     return ratio
 
-def count_assonance(text):
 
+
+def count_assonance(text):
+    """
+    Counts occurrences of assonance in the given text using phonetic analysis.
+    
+    Parameters:
+        text (str): The input text.
+    
+    Returns:
+        int: The number of assonance occurrences.
+    """
     vowels = 'aeiou'
     assonance_count = 0
     words = text.split()
@@ -934,23 +1063,23 @@ def is_inverted_structure(sentence):
             adv_positions.append(i)
             print(f" - Adverb found at position {i}")
 
-    # Expletive inversion
+    
     if expletive_positions and verb_positions:
         if min(expletive_positions) < min(verb_positions):
             print(" -> Expletive inversion detected")
             return "expletive_inversion"
 
-    # Emphatic inversion
+    
     if emphatic_positions and verb_positions:
         if min(emphatic_positions) < min(verb_positions):
             print(" -> Emphatic inversion detected")
             return "emphatic_inversion"
 
-    # Classic inversion
+    
     all_subject_positions = subject_positions + potential_subject_positions
     if all_subject_positions and verb_positions:
         if min(all_subject_positions) > min(verb_positions):
-            # Check for adverb or prepositional phrase at the beginning
+            
             if (adv_positions and min(adv_positions) == 0) or (sentence.words[0].upos == 'ADP'):
                 print(" -> Classic inversion detected (with initial adverb or prepositional phrase)")
                 return "classic_inversion"
@@ -958,11 +1087,11 @@ def is_inverted_structure(sentence):
                 print(" -> Classic inversion detected")
                 return "classic_inversion"
 
-    # If no inversion is found, return None
+    
     print(" -> No inversion detected")
     return None
 
-# Function to compute the normalized frequencies of inversion types
+
 def compute_inversion_frequencies(doc):
     inversion_counts = {
         "classic_inversion": 0,
@@ -983,8 +1112,6 @@ def compute_inversion_frequencies(doc):
     normalized_frequencies = {key: count / total_sentences for key, count in inversion_counts.items()}
     
     return normalized_frequencies
-
-
 
 def is_initial_conjunction(token, sentence):
     
@@ -1019,7 +1146,7 @@ def has_embedded_clause(sentence):
         if is_embedded_clause(word):
             print(f"DEBUG: Embedded clause detected: {word.text} ({word.deprel})")
             return True
-        # Check for reduced relative clauses
+        
         if word.deprel in {"acl", "acl:relcl"} and word.upos == "VERB":
             print(f"DEBUG: Reduced relative clause detected: {word.text} ({word.deprel})")
             return True
@@ -1042,7 +1169,6 @@ def calculate_embedded_clause_ratio(doc):
     ratio = embedded_clauses / total_sentences
     print(f"DEBUG: Total sentences = {total_sentences}, Sentences with embedded clauses = {embedded_clauses}, Ratio = {ratio:.4f}")
     return ratio
-
 
 def estimated_stressed_syllables(word):
 
@@ -1143,15 +1269,8 @@ def zipfian_distribution(x, s, c):
     return c / (x ** s)
 
 def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
-    """
-    Compute the Zipfian loss for a given document.
+
     
-    :param doc: A stanza Document object
-    :param min_word_length: Minimum word length to consider (default: 1)
-    :param max_rank: Maximum rank to consider for fitting (default: None, uses all words)
-    :return: Zipfian loss value
-    """
-    # Extract words, filtering by minimum length
     words = [word.text.lower() for sentence in doc.sentences 
              for word in sentence.words 
              if word.text.isalpha() and len(word.text) >= min_word_length]
@@ -1160,18 +1279,18 @@ def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
         print("No valid words found in the document.")
         return np.nan
     
-    # Compute frequency distribution
+    
     freq_dist = Counter(words)
     sorted_freqs = sorted(freq_dist.values(), reverse=True)
     
-    # Limit ranks if max_rank is specified
+    
     if max_rank is not None and max_rank < len(sorted_freqs):
         sorted_freqs = sorted_freqs[:max_rank]
     
     ranks = np.arange(1, len(sorted_freqs) + 1)
     freqs = np.array(sorted_freqs)
     
-    # Fit Zipfian distribution
+    
     try:
         popt, _ = curve_fit(zipfian_distribution, ranks, freqs, p0=[1.0, freqs[0]], 
                             bounds=([0, 0], [np.inf, np.inf]))
@@ -1180,7 +1299,7 @@ def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
         print(f"Error in fitting Zipfian distribution: {e}")
         return np.nan
     
-    # Compute fitted frequencies
+    
     fitted_freqs = zipfian_distribution(ranks, s, c)
     
     
@@ -1188,11 +1307,11 @@ def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
     freq_norm = freqs / total_words
     fitted_freq_norm = fitted_freqs / total_words
     
-    # Compute loss using Kullback-Leibler divergence
-    epsilon = 1e-10  # Small constant to avoid log(0)
+    
+    epsilon = 1e-10  
     kl_div = np.sum(freq_norm * np.log((freq_norm + epsilon) / (fitted_freq_norm + epsilon)))
     
-    # Compute R-squared for goodness of fit
+    
     ss_res = np.sum((freq_norm - fitted_freq_norm) ** 2)
     ss_tot = np.sum((freq_norm - np.mean(freq_norm)) ** 2)
     r_squared = 1 - (ss_res / ss_tot)
@@ -1740,7 +1859,7 @@ def nominalization(text):
     
     return normalized_score
 
-# #not sure about how applicable this level of textual granularity is....
+
 def preposition_usage(doc):
 
     prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
