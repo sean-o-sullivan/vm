@@ -3,7 +3,7 @@ import numpy as np
 
 def generateEmbedding(text):
     """
-    Computes a stylometric embedding representation of the text.
+    This cool function computes a stylometric embedding representation of the text.
 
     Parameters:
         text (str): The input text sample.

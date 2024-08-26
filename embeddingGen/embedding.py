@@ -2,7 +2,7 @@ from stylometricValues import *
 
 def generateEmbedding(text):
     """
-    Computes a stylometric embedding representation of the text.
+    This computes a stylometric embedding representation of the text.
 
     Parameters:
         text (str): The input text sample.
