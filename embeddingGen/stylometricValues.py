@@ -448,6 +448,7 @@ def dugast_vmi(doc):
     
     return vmi
 
+
 def yules_k_characteristic(doc):
     words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
     
@@ -1086,7 +1087,6 @@ def is_inverted_structure(sentence):
     
     print(" -> No inversion detected")
     return None
-
 
 def compute_inversion_frequencies(doc):
     inversion_counts = {
@@ -1855,21 +1855,52 @@ def nominalization(text):
     
     return normalized_score
 
+# #not sure about how applicable this level of textual granularity is....
+# def preposition_usage(doc):
+
+#     prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
+#     total_words = sum(len(sentence.words) for sentence in doc.sentences)
+    
+#     if total_words == 0:
+#         return {prep: 0.0 for prep in prepositions}
+    
+#     preposition_counts = {
+#         prep: sum(1 for sentence in doc.sentences for word in sentence.words if word.text.lower() == prep)
+#         for prep in prepositions
+#     }
+    
+#     return {prep: count / total_words for prep, count in preposition_counts.items()}
+#this implementation will be based on relative frequencies of prepositions
 
 def preposition_usage(doc):
-
-    prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
-    total_words = sum(len(sentence.words) for sentence in doc.sentences)
+    """
+    Computes the usage rates of specific prepositions in the given processed document,
+    standardized against the total number of prepositions.
     
-    if total_words == 0:
+    Parameters:
+    doc: The processed document from the Stanza pipeline.
+    
+    Returns:
+    dict: A dictionary of usage rates for each preposition.
+    """
+    prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
+    
+    # Count the total number of prepositions in the document
+    total_prepositions = sum(
+        1 for sentence in doc.sentences for word in sentence.words if word.text.lower() in prepositions
+    )
+    
+    if total_prepositions == 0:
         return {prep: 0.0 for prep in prepositions}
     
+    # Count the occurrences of each preposition
     preposition_counts = {
         prep: sum(1 for sentence in doc.sentences for word in sentence.words if word.text.lower() == prep)
         for prep in prepositions
     }
     
-    return {prep: count / total_words for prep, count in preposition_counts.items()}
+    # Standardize against the total number of prepositions
+    return {prep: count / total_prepositions for prep, count in preposition_counts.items()}
 
 def detailed_conjunctions_usage(doc):
         
