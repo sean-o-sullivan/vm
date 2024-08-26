@@ -216,7 +216,6 @@ def modifiers_per_noun_phrase(doc):
     
     return avg_modifiers_per_noun_phrase
 
-
 def coordinated_phrases_per_sentence(doc):
     total_coordinated_phrases = 0
     total_sentences = len(doc.sentences)
@@ -781,7 +780,6 @@ def analyze_passiveness(doc):
         "std_passiveness": std_passiveness
     }
 
-
 def is_cleft_sentence(sentence):
     words = sentence.words
     text = ' '.join(word.text.lower() for word in words)
@@ -865,8 +863,6 @@ def ratio_of_cleft_sentences(doc):
     ratio = cleft_count / len(sentences)
     
     return ratio
-
-
 
 def count_assonance(text):
     """
@@ -1244,13 +1240,13 @@ def pairwise_variability_index(doc):
 def calculate_noun_overlap(doc):
     overlap_count = 0
     previous_nouns = set()
-    
+
     for sentence in doc.sentences:
-        current_nouns = {word.text for word in sentence.words if word.upos == 'NOUN' and word.deprel in {'nsubj', 'dobj', 'nmod'}}
+        current_nouns = {word.text.lower() for word in sentence.words if word.upos == 'NOUN'}
         if previous_nouns & current_nouns:
             overlap_count += 1
-        previous_nouns = current_nouns
-    
+        previous_nouns = previous_nouns | current_nouns  # Keep accumulating nouns
+
     return overlap_count / len(doc.sentences) if len(doc.sentences) > 0 else 0
 
 def is_rare(word, threshold=0.001):
@@ -1874,7 +1870,6 @@ def preposition_usage(doc):
     }
     
     return {prep: count / total_words for prep, count in preposition_counts.items()}
-
 
 def detailed_conjunctions_usage(doc):
         
