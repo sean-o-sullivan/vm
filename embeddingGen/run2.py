@@ -59,7 +59,7 @@ def process_corpus(root_dir, num_processes):
         
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Author', 'Book'] + [f'Feature_{j}' for j in range(len(get_embedding('Test')))])
+            writer.writerow(['Author', 'Book'] + [f'Feature_{j}' for j in range(111)])
 
         for author in author_chunk:
             author_dir = os.path.join(root_dir, author)
