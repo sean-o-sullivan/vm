@@ -21,14 +21,14 @@ def parentheticals_and_brackets_rate(text, delimiters={'(', ')', '[', ']'}):
     return delimiter_count / total_chars
 
 def process_book(file_path, author, output_file):
-    print(f"Processing book: {file_path} by {author}")
+   # print(f"Processing book: {file_path} by {author}")
     
     try:
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             text = file.read()
-            print(f"Text of length {len(text)} read from {file_path}")
+    #        print(f"Text of length {len(text)} read from {file_path}")
     except Exception as e:
-        print(f"Error reading {file_path}: {e}")
+    #    print(f"Error reading {file_path}: {e}")
         return
 
     quotations_rate_value = quotations_rate(text)
