@@ -1772,15 +1772,25 @@ def parentheticals_and_brackets_rate(doc, delimiters={'(', ')', '[', ']'}):
     
     return delimiter_count / total_words
 
+# #def quotations_rate(doc, delimiters={'"', "'", '“', '”', '‘', '’', '«', '»', '‹', '›'}):
+#     """
+#     Computes the rate of quotations in the given processed document.
 
-    total_words = sum(len(sentence.words) for sentence in doc.sentences)
+#     Parameters:
+#         doc: The processed document from the Stanza pipeline.
+#         delimiters (set): A set of characters representing various types of quotation marks.
+
+#     Returns:
+#         float: The rate of quotations.
+#     """
+#     total_words = sum(len(sentence.words) for sentence in doc.sentences)
     
-    if total_words == 0:
-        return 0.0
+#     if total_words == 0:
+#         return 0.0
     
-    delimiter_count = sum(1 for sentence in doc.sentences for token in sentence.tokens if token.text in delimiters)
+#     delimiter_count = sum(1 for sentence in doc.sentences for token in sentence.tokens if token.text in delimiters)
     
-    return delimiter_count / total_words
+#     return delimiter_count / total_words
 
 def dashes_and_ellipses_rate(doc, delimiters={'—', '–', '‒', '―', '...', '…'}):
     total_words = sum(len(sentence.words) for sentence in doc.sentences)
@@ -1885,7 +1895,6 @@ def preposition_usage(doc):
     """
     prepositions = ['in', 'of', 'to', 'for', 'with', 'on', 'at', 'by', 'from', 'up', 'about', 'into', 'over', 'after']
     
-    # Count the total number of prepositions in the document
     total_prepositions = sum(
         1 for sentence in doc.sentences for word in sentence.words if word.text.lower() in prepositions
     )
@@ -1893,13 +1902,11 @@ def preposition_usage(doc):
     if total_prepositions == 0:
         return {prep: 0.0 for prep in prepositions}
     
-    # Count the occurrences of each preposition
     preposition_counts = {
         prep: sum(1 for sentence in doc.sentences for word in sentence.words if word.text.lower() == prep)
         for prep in prepositions
     }
     
-    # Standardize against the total number of prepositions
     return {prep: count / total_prepositions for prep, count in preposition_counts.items()}
 
 def detailed_conjunctions_usage(doc):
