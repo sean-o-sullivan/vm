@@ -28,8 +28,12 @@ def process_book(file_path_author):
     
     with open(file_path, 'r', encoding='utf-8') as file:
         text = file.read()
+        print(f"Text of length {len(text)} read from {file_path}")
 
-    doc = nlp(text)
+    print(f"Passing text to Stanza pipeline for tokenization...")
+    doc = nlp(text)  # This is where the text is tokenized
+    print(f"Tokenization completed for {file_path}")
+
     sentences = [sentence.text for sentence in doc.sentences]
     chunks = [' '.join(sentences[i:i+WINDOW_SIZE]) for i in range(0, len(sentences), WINDOW_SIZE)]
     print(f"Book split into {len(chunks)} chunks.")
