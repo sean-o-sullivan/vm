@@ -7,7 +7,7 @@ from tqdm import tqdm
 #plotting more
 csv_file = 'corpus_statistics.csv'
 
-
+# Load the dataainto a pandas DataFrame
 df = pd.read_csv(csv_file)
 
 
