@@ -1,20 +1,16 @@
 import requests
 
-url = "http://127.0.0.1:11434/v1/chat/"
-
+url = "http://localhost:11434/api/chat"
 payload = {
-	"model": "llama-3.1-8b",
-	"prompt": "Hello, how are you?"
+    "model": "llama3.1",
+    "messages": [
+        {"role": "user", "content": "Why is the sky blue?"}
+    ]
 }
-
 headers = {
-	"Content-Type": "application/json"
+    "Content-Type": "application/json"
 }
 
 response = requests.post(url, json=payload, headers=headers)
-
-
-print(f"status code: {response.status_code}")
-
-print(f"response: {response.text}")
-
+print(f"Status code: {response.status_code}")
+print(f"Response: {response.json()}")
