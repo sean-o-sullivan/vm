@@ -1,0 +1,72 @@
+import stanza
+import time
+import random
+
+
+def generate_random_sentence():
+    words = ['The', 'quick', 'brown', 'fox', 'jumps', 'over', 'the', 'lazy', 'dog', 'A', 'man', 'a', 'plan', 'Panama']
+    return ' '.join(random.choices(words, k=random.randint(5, 15))) + '.'
+
+def get_story():
+    return """The Whisper of the Cosmos
+
+In the depths of an ordinary Tuesday afternoon, Elara felt it for the first time - a gentle tugging at the edges of her consciousness, like a cosmic string being plucked. She paused, coffee mug halfway to her lips, and listened.
+
+There it was again. A whisper, not of words, but of pure sensation. It spoke of vast, swirling nebulae and the birth of stars. It hummed with the resonance of black holes merging across unimaginable distances.
+
+Elara set down her mug, her hands trembling slightly. She knew, with a certainty that defied explanation, that the universe had just become aware of itself - and it had chosen her as its first confidant.
+
+As the whisper grew into a symphony of cosmic music, Elara closed her eyes and smiled. The ordinary Tuesday had just become the day everything changed."""
+
+def test_stanza_speed(num_sentences, use_story=False):
+    
+    if use_story:
+        text = get_story()
+    else:
+        text = ' '.join([generate_random_sentence() for _ in range(num_sentences)])
+    
+    
+    start_time = time.time()
+    doc = nlp(text)
+    end_time = time.time()
+    
+    
+    processing_time = end_time - start_time
+    num_sentences = len(doc.sentences)
+    time_per_sentence = processing_time / num_sentences if num_sentences > 0 else 0
+
+    
+    return {
+        "total_time": processing_time,
+        "time_per_sentence": time_per_sentence,
+        "num_sentences": num_sentences
+    }
+
+if __name__ == "__main__":
+    print("Initializing the Stanza pipeline...")
+    start_time = time.time()
+    nlp = stanza.Pipeline('en', processors='tokenize')
+    end_time = time.time()
+    print(f"Stanza pipeline initialized in {end_time - start_time:.4f} seconds.")
+    print()
+
+    
+    result = test_stanza_speed(30)
+    print(f"Processing 30 random sentences:")
+    print(f"  Total time: {result['total_time']:.4f} seconds")
+    print(f"  Time per sentence: {result['time_per_sentence']:.4f} seconds")
+    print(f"  Number of sentences: {result['num_sentences']}")
+
+    
+    result = test_stanza_speed(60)
+    print(f"\nProcessing 60 random sentences:")
+    print(f"  Total time: {result['total_time']:.4f} seconds")
+    print(f"  Time per sentence: {result['time_per_sentence']:.4f} seconds")
+    print(f"  Number of sentences: {result['num_sentences']}")
+
+    
+    result = test_stanza_speed(0, use_story=True)
+    print(f"\nProcessing the story:")
+    print(f"  Total time: {result['total_time']:.4f} seconds")
+    print(f"  Time per sentence: {result['time_per_sentence']:.4f} seconds")
+    print(f"  Number of sentences: {result['num_sentences']}")
