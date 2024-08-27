@@ -12,8 +12,8 @@ from tqdm import tqdm
 
 #a lot of capitals here, I know
 ROOT_DIRECTORY = '/home/aiadmin/Desktop/datasets/bigText'
-QUOTATION_THRESHOLD = 0.05
-BRACKETS_THRESHOLD = 0.01
+QUOTATION_THRESHOLD = 0.001008
+BRACKETS_THRESHOLD = 0.002291
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 20
 SAMPLE_BUFFER = 1.15
