@@ -10,6 +10,9 @@ WINDOW_SIZE = 900
 NO_TOUCH_ZONE = 5000  
 BOOK_HARD_CAP = 50000  
 
+#REMEMBER: Need to verify that the final text file does not exceed 100mb. If so we will need to shard it.
+
+# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
@@ -38,6 +41,10 @@ def get_text_sample(file_path, window_size, no_touch_zone):
                 file.seek(start_pos)
                 content = file.read(window_size)
                 logging.info(f"Non-UTF-8 book section from {file_path}: {content[:500]}")
+                
+                # Wait for user input to continue
+                input("Non-UTF-8 encoding detected. Review the section above. Press Enter to continue...")
+                
                 return content
         except Exception as e:
             logging.error(f"Failed to read {file_path} even with fallback encoding: {e}")
