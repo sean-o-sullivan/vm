@@ -29,9 +29,19 @@ def get_text_sample(file_path, window_size, no_touch_zone):
         with open(file_path, 'r', encoding='utf-8') as file:
             file.seek(start_pos)
             return file.read(window_size)
-    except (OSError, IOError) as e:
+    except (UnicodeDecodeError, OSError, IOError) as e:
         logging.error(f"Failed to read {file_path}: {e}")
-        return None
+        
+        # If UTF-8 fails, try another encoding and print a section of the book
+        try:
+            with open(file_path, 'r', encoding='ISO-8859-1') as file:
+                file.seek(start_pos)
+                content = file.read(window_size)
+                logging.info(f"Non-UTF-8 book section from {file_path}: {content[:500]}")
+                return content
+        except Exception as e:
+            logging.error(f"Failed to read {file_path} even with fallback encoding: {e}")
+            return None
 
 def create_batch_request(custom_id, content):
     return {
@@ -78,8 +88,6 @@ def process_corpus(root_dir, output_file):
     logging.info(f"Batch dataset created: {output_file}")
     logging.info(f"Total books processed: {total_books_processed}")
     return total_books_processed
-
-
 
 if __name__ == "__main__":
     output_file = 'batch_dataset_classification.jsonl'
