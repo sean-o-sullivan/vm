@@ -43,7 +43,7 @@ def get_text_sample(file_path, window_size, no_touch_zone):
                 logging.info(f"Non-UTF-8 book section from {file_path}: {content[:500]}")
                 
                 # Wait for user input to continue
-                input("Non-UTF-8 encoding detected. Review the section above. Press Enter to continue...")
+#                input("Non-UTF-8 encoding detected. Review the section above. Press Enter to continue...")
                 
                 return content
         except Exception as e:
