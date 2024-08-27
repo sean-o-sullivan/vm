@@ -8,7 +8,7 @@ payload = {
 }
 
 headers = {
-	"Content-Type: "application/json"
+	"Content-Type": "application/json"
 }
 
 response = requests.post(url, json=payload, headers=headers)
