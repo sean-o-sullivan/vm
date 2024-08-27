@@ -1,0 +1,46 @@
+import os
+import logging
+
+#more runs, I know...
+ROOT_DIRECTORY = '/home/aiadmin/Desktop/datasets/bigText'
+
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def get_book_sample(file_path, sample_size=1000):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read(sample_size)
+    except Exception as e:
+        logging.error(f"Error reading file {file_path}: {e}")
+        return None
+
+def process_corpus(root_dir):
+    logging.info(f"Traversing root directory: {root_dir}")
+    authors = [author for author in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, author))]
+    logging.info(f"Found {len(authors)} authors.")
+
+    for author in authors:
+        author_dir = os.path.join(root_dir, author)
+        books = [book for book in os.listdir(author_dir) if book.endswith('.txt')]
+        
+        for book in books:
+            book_path = os.path.join(author_dir, book)
+            sample = get_book_sample(book_path)
+            
+            if sample:
+                print(f"\nAuthor: {author}")
+                print(f"Book: {book}")
+                print("First 1000 characters:")
+                print(sample)
+                
+                user_input = input("Press 'Enter' for next book or 'q' to quit: ")
+                if user_input.lower() == 'q':
+                    return
+
+    logging.info("Finished processing all books.")
+
+if __name__ == "__main__":
+    logging.info("Starting the corpus processing...")
+    process_corpus(ROOT_DIRECTORY)
+    logging.info("Corpus processing completed.")
