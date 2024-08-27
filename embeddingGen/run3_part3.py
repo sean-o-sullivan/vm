@@ -8,8 +8,7 @@ from tqdm import tqdm
 ROOT_DIRECTORY = '/home/aiadmin/Desktop/datasets/bigText'
 WINDOW_SIZE = 900  
 NO_TOUCH_ZONE = 5000  
-BOOK_HARD_CAP = 3  
-
+BOOK_HARD_CAP = 50000  
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
