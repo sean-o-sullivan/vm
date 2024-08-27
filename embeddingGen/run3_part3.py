@@ -6,9 +6,9 @@ from tqdm import tqdm
 
 
 ROOT_DIRECTORY = '/home/aiadmin/Desktop/datasets/bigText'
-WINDOW_SIZE = 900  
-NO_TOUCH_ZONE = 5000  
-BOOK_HARD_CAP = 50000  
+WINDOW_SIZE = 1000  # Number of characters to extract
+NO_TOUCH_ZONE = 5000  # Number of characters to skip at the beginning of each book
+BOOK_HARD_CAP = 50000  # Maximum number of books to process, also the max for openai api
 
 #REMEMBER: Need to verify that the final text file does not exceed 100mb. If so we will need to shard it.
 
