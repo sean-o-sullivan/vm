@@ -73,8 +73,8 @@ def process_book(args):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    input_dir = 'path/to/your/input/directory'
-    output_file = 'output_embeddings.csv'
+    input_dir = '/home/aiadmin/Desktop/datasets/bigText'
+    output_file = 'output_embeddings1.csv'
 
     all_books = []
 
