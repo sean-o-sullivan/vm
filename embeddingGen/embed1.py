@@ -13,6 +13,7 @@ SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 1300  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
+MAX_BOOKS = 3  # Maximum number of books to process in total
 
 nlp = stanza.Pipeline('en', processors='tokenize')
 
@@ -75,7 +76,7 @@ def main():
     input_dir = 'path/to/your/input/directory'
     output_file = 'output_embeddings.csv'
 
-    author_books = defaultdict(list)
+    all_books = []
 
     # Collect all book paths
     for author_dir in os.listdir(input_dir):
@@ -84,18 +85,18 @@ def main():
             for book_file in os.listdir(author_path):
                 book_path = os.path.join(author_path, book_file)
                 if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                    author_books[author_dir].append(book_path)
+                    all_books.append((book_path, author_dir))
+
+    # Shuffle and limit to MAX_BOOKS
+    random.shuffle(all_books)
+    selected_books = all_books[:MAX_BOOKS]
 
     sample_embedding = get_embedding("sample text")
     fieldnames = ['author', 'book', 'shardID'] + list(sample_embedding.keys())
 
     args_list = []
-    for author, books in author_books.items():
-        samples_per_book = SAMPLES_PER_AUTHOR // len(books)
-        extra_samples = SAMPLES_PER_AUTHOR % len(books)
-        for i, book_path in enumerate(books):
-            max_samples = samples_per_book + (1 if i < extra_samples else 0)
-            args_list.append((book_path, author, max_samples, output_file, fieldnames))
+    for book_path, author in selected_books:
+        args_list.append((book_path, author, SAMPLES_PER_AUTHOR, output_file, fieldnames))
 
     # Initialize the CSV file with headers
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
