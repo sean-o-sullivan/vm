@@ -7,7 +7,6 @@ from multiprocessing import Pool
 from tqdm import tqdm
 from embedding2 import get_embedding
 
-
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 1300  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
@@ -63,8 +62,8 @@ def process_book(args):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    input_dir = 'path/to/your/input/directory'
-    output_file = 'output_embeddings.csv'
+    input_dir = '/home/aiadmin/Desktop/datasets/bigText'
+    output_file = 'output_embeddings1.csv'
 
     all_books = []
 
