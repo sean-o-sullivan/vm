@@ -5,7 +5,7 @@ import stanza
 import logging
 from multiprocessing import Pool
 from tqdm import tqdm
-from embedding2 import get_embedding
+from embedding2 import * 
 from collections import defaultdict
 
 
@@ -54,7 +54,7 @@ def process_book(args):
         if len(processed_sample) < SAMPLE_LENGTH / 2:
             continue  
         
-        embedding = get_embedding(processed_sample)
+        embedding = generateEmbedding(processed_sample)
         row = {
             'author': author,
             'book': book_name,
@@ -91,7 +91,18 @@ def main():
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
 
-    sample_embedding = get_embedding("sample text")
+    sampleText = """
+Chapter One of "Skulduggery Pleasant" by Derek Landy begins with the sudden death of Gordon Edgley, which comes as a shock to everyone, including himself[1]. The story then moves to Gordon's funeral, where his niece Stephanie Edgley first notices a mysterious gentleman in a tan overcoat[1].
+
+The funeral is described as being attended by family and acquaintances, but not many friends, as Gordon wasn't well-liked in the publishing world despite his successful horror and magic books[1]. After the service, Stephanie and her parents travel to Gordon's house, which is described as ridiculously big with vast grounds[1].
+
+At the house, Stephanie observes the mourners during the post-funeral gathering. She notes the greed in her uncle Fergus's eyes as he pockets silverware, and describes her aunt Beryl as a dislikable woman prying for gossip[1]. Stephanie's cousins, Carol and Crystal, are portrayed as sour and vindictive twins who ignore her[1].
+
+The chapter also mentions a secret door in the living room disguised as a bookcase, which Stephanie used to imagine as part of her childhood adventures. However, during the gathering, this door stands open, disappointing Stephanie as it loses its magical quality[1].
+
+The excerpt ends with Stephanie taking a walk through the corridors of her uncle's house, describing the long hallways lined with paintings, the polished wooden floors, and the overall sense of age and experience that permeates the house[1].
+ """
+    sample_embedding = generateEmbedding(sampleText)
     fieldnames = ['author', 'book', 'shardID'] + list(sample_embedding.keys())
 
     args_list = []
