@@ -6,11 +6,13 @@ import logging
 from multiprocessing import Pool
 from tqdm import tqdm
 from embedding2 import get_embedding
+from collections import defaultdict
+
 
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 1300  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
-MAX_BOOKS = 3  # Set this to your desired maximum number of books to process
+NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
 
 nlp = stanza.Pipeline('en', processors='tokenize')
 
@@ -33,15 +35,18 @@ def process_sample(raw_sample):
     return processed_sample
 
 def process_book(args):
-    file_path, author, num_samples, output_file = args
+    file_path, author, max_samples, output_file, fieldnames = args
     book_name = os.path.basename(file_path)
     logging.info(f"Processing book: {book_name} by {author}")
 
     file_size = os.path.getsize(file_path)
+    effective_file_size = max(0, file_size - NO_TOUCH_ZONE)
+    max_possible_samples = max(1, (effective_file_size - SAMPLE_LENGTH) // (SAMPLE_LENGTH // 2))
+    num_samples = min(max_samples, max_possible_samples)
     
     embeddings = []
     for shard_id in range(num_samples):
-        position = random.randint(0, max(0, file_size - SAMPLE_LENGTH))
+        position = random.randint(NO_TOUCH_ZONE, max(NO_TOUCH_ZONE, file_size - SAMPLE_LENGTH))
         raw_sample = get_text_sample(file_path, position)
         processed_sample = process_sample(raw_sample)
         
@@ -49,12 +54,17 @@ def process_book(args):
             continue  
         
         embedding = get_embedding(processed_sample)
-        row = [author, book_name, shard_id] + [embedding[key] for key in embedding]
+        row = {
+            'author': author,
+            'book': book_name,
+            'shardID': shard_id
+        }
+        row.update(embedding)  # Add all key-value pairs from the embedding dictionary
         embeddings.append(row)
     
     logging.info(f"Saving {len(embeddings)} embeddings to {output_file}...")
     with open(output_file, 'a', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile)
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writerows(embeddings)
     logging.info(f"Finished processing {file_path}.")
     return len(embeddings)
@@ -62,10 +72,10 @@ def process_book(args):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    input_dir = '/home/aiadmin/Desktop/datasets/bigText'
-    output_file = 'output_embeddings1.csv'
+    input_dir = 'path/to/your/input/directory'
+    output_file = 'output_embeddings.csv'
 
-    all_books = []
+    author_books = defaultdict(list)
 
     # Collect all book paths
     for author_dir in os.listdir(input_dir):
@@ -73,21 +83,24 @@ def main():
         if os.path.isdir(author_path):
             for book_file in os.listdir(author_path):
                 book_path = os.path.join(author_path, book_file)
-                if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH:
-                    all_books.append((book_path, author_dir))
+                if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
+                    author_books[author_dir].append(book_path)
 
-    # Shuffle the list of books
-    random.shuffle(all_books)
+    sample_embedding = get_embedding("sample text")
+    fieldnames = ['author', 'book', 'shardID'] + list(sample_embedding.keys())
 
-    all_books = all_books[:MAX_BOOKS]
+    args_list = []
+    for author, books in author_books.items():
+        samples_per_book = SAMPLES_PER_AUTHOR // len(books)
+        extra_samples = SAMPLES_PER_AUTHOR % len(books)
+        for i, book_path in enumerate(books):
+            max_samples = samples_per_book + (1 if i < extra_samples else 0)
+            args_list.append((book_path, author, max_samples, output_file, fieldnames))
 
-    args_list = [(book_path, author, SAMPLES_PER_AUTHOR, output_file) for book_path, author in all_books]
-
-    embedding_keys = get_embedding("test").keys()
-    headers = ['author', 'book', 'shardID'] + list(embedding_keys)
+    # Initialize the CSV file with headers
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(headers)
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
 
     with Pool() as pool:
         results = list(tqdm(pool.imap(process_book, args_list), total=len(args_list)))
