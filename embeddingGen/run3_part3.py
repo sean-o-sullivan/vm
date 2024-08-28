@@ -97,7 +97,7 @@ def process_corpus(root_dir, output_file):
     return total_books_processed
 
 if __name__ == "__main__":
-    output_file = 'batch_dataset_classification.jsonl'
+    output_file = 'batch_dataset_classification2.jsonl'
     logging.info("Starting the corpus processing for GPT-4 batch requests...")
     books_processed = process_corpus(ROOT_DIRECTORY, output_file)
     logging.info(f"Corpus processing completed. Processed {books_processed} books.")
