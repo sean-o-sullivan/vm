@@ -119,6 +119,7 @@ def parse_custom_id(custom_id):
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None, None
 
+
 def load_eligible_books(jsonl_path):
     eligible_books = defaultdict(set)
     try:
@@ -129,8 +130,8 @@ def load_eligible_books(jsonl_path):
                     custom_id = entry['custom_id']
                     response_content = entry['response']['body']['choices'][0]['message']['content']
                     if response_content == "YES":
-			author_name, file_name = parse_custom_id(custom_id)
-			print(f"author name is: {author_name}, file name is: {file_name}.")
+                        author_name, file_name = parse_custom_id(custom_id)
+                        print(f"author name is: {author_name}, file name is: {file_name}.")
                         if author_name and file_name:
                             eligible_books[author_name].add(file_name)
                             logging.info(f"Eligible book: {author_name} -> {file_name}")
@@ -148,6 +149,8 @@ def load_eligible_books(jsonl_path):
         logging.error(f"Error loading eligible books from {jsonl_path}: {e}")
     
     return eligible_books
+
+
 
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
