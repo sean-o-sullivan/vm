@@ -129,7 +129,8 @@ def load_eligible_books(jsonl_path):
                     custom_id = entry['custom_id']
                     response_content = entry['response']['body']['choices'][0]['message']['content']
                     if response_content == "YES":
-                        author_name, file_name = parse_custom_id(custom_id)
+			author_name, file_name = parse_custom_id(custom_id)
+			print(f"author name is: {author_name}, file name is: {file_name}.")
                         if author_name and file_name:
                             eligible_books[author_name].add(file_name)
                             logging.info(f"Eligible book: {author_name} -> {file_name}")
@@ -151,7 +152,7 @@ def load_eligible_books(jsonl_path):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    sample_file = 'samples.csv'
+    sample_file = 'samples2.csv'
 
     logging.info("Loading eligible books...")
     eligible_books = load_eligible_books(JSONL_PATH)
