@@ -111,7 +111,7 @@ def process_book(args):
 def parse_custom_id(custom_id):
     try:
         # We only care about the file name part
-        file_name = custom_id.split('-', 1)[-1].split('_', 1)[-1]  # Extract filename part
+        file_name = custom_id.split('-', 1)[-1]  # Extract filename part
         return file_name
     except Exception as e:
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
