@@ -156,7 +156,7 @@ def load_eligible_books(jsonl_path):
 
 
 
-def main()
+def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     sample_file = 'results.csv'
