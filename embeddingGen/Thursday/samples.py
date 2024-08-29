@@ -14,6 +14,9 @@ MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
 MAX_BOOKS = 3  # Maximum number of books to process in total
 
+BIG_TEXT_DIR = '/home/aiadmin/Desktop/datasets/bigText'
+JSONL_PATH = '/home/aiadmin/Desktop/datasets/embeddingGen/batch_dataset_classification_output.jsonl'
+
 try:
     nlp = stanza.Pipeline('en', processors='tokenize')
 except Exception as e:
@@ -129,6 +132,7 @@ def load_eligible_books(jsonl_path):
                         author_name, file_name = parse_custom_id(custom_id)
                         if author_name and file_name:
                             eligible_books[author_name].add(file_name)
+                            logging.info(f"Eligible book: {author_name} -> {file_name}")
                         else:
                             logging.error(f"Failed to parse custom_id: {custom_id}")
                     else:
@@ -147,29 +151,32 @@ def load_eligible_books(jsonl_path):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    input_dir = '/home/aiadmin/Desktop/datasets/bigText'
     sample_file = 'samples.csv'
-    jsonl_path = 'embeddingGen/batch_dataset_classification_output.jsonl'
 
     logging.info("Loading eligible books...")
-    eligible_books = load_eligible_books(jsonl_path)
+    eligible_books = load_eligible_books(JSONL_PATH)
 
     if not eligible_books:
         logging.error("No eligible books found. Exiting.")
         return
 
+    logging.info(f"Eligible authors detected: {list(eligible_books.keys())}")
+
     all_books = []
 
     try:
-        for author_dir in os.listdir(input_dir):
-            author_path = os.path.join(input_dir, author_dir)
+        for author_dir in os.listdir(BIG_TEXT_DIR):
+            author_path = os.path.join(BIG_TEXT_DIR, author_dir)
+            logging.info(f"Checking author directory: {author_dir}")
             if os.path.isdir(author_path):
                 if author_dir in eligible_books:
+                    logging.info(f"Author {author_dir} is eligible. Checking books...")
                     for book_file in os.listdir(author_path):
                         book_path = os.path.join(author_path, book_file)
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
                             if book_file in eligible_books[author_dir]:
                                 all_books.append((book_path, author_dir))
+                                logging.info(f"Selected book: {book_file}")
                             else:
                                 logging.info(f"File {book_file} in author {author_dir} is not in eligible books list.")
                         else:
@@ -179,7 +186,7 @@ def main():
             else:
                 logging.warning(f"Author path {author_path} is not a directory.")
     except Exception as e:
-        logging.error(f"Error collecting books from {input_dir}: {e}")
+        logging.error(f"Error collecting books from {BIG_TEXT_DIR}: {e}")
 
     if not all_books:
         logging.error("No books selected for processing. Exiting.")
