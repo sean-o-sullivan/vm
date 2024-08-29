@@ -8,7 +8,7 @@ from tqdm import tqdm
 from collections import defaultdict
 
 SAMPLES_PER_AUTHOR = 100
-SAMPLE_LENGTH = 10000  # Number of characters per sample
+SAMPLE_LENGTH = 20000  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
 MAX_BOOKS = 5000 # Maximum number of books to process in total
