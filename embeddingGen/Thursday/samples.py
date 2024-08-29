@@ -38,7 +38,7 @@ def process_sample(raw_sample):
         doc = nlp(raw_sample)
         sentences = [sent.text for sent in doc.sentences]
         
-        if len(sentences) > 2:
+        if (len(sentences) > 2):
             processed_sample = ' '.join(sentences[1:-1])
         else:
             processed_sample = ''
@@ -119,7 +119,6 @@ def parse_custom_id(custom_id):
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None, None
 
-
 def load_eligible_books(jsonl_path):
     eligible_books = defaultdict(set)
     try:
@@ -131,7 +130,6 @@ def load_eligible_books(jsonl_path):
                     response_content = entry['response']['body']['choices'][0]['message']['content']
                     if response_content == "YES":
                         author_name, file_name = parse_custom_id(custom_id)
-                        print(f"author name is: {author_name}, file name is: {file_name}.")
                         if author_name and file_name:
                             eligible_books[author_name].add(file_name)
                             logging.info(f"Eligible book: {author_name} -> {file_name}")
@@ -150,12 +148,10 @@ def load_eligible_books(jsonl_path):
     
     return eligible_books
 
-
-
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    sample_file = 'samples2.csv'
+    sample_file = 'results.csv'
 
     logging.info("Loading eligible books...")
     eligible_books = load_eligible_books(JSONL_PATH)
@@ -173,20 +169,13 @@ def main():
             author_path = os.path.join(BIG_TEXT_DIR, author_dir)
             logging.info(f"Checking author directory: {author_dir}")
             if os.path.isdir(author_path):
-                if author_dir in eligible_books:
-                    logging.info(f"Author {author_dir} is eligible. Checking books...")
-                    for book_file in os.listdir(author_path):
-                        book_path = os.path.join(author_path, book_file)
-                        if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                            if book_file in eligible_books[author_dir]:
-                                all_books.append((book_path, author_dir))
-                                logging.info(f"Selected book: {book_file}")
-                            else:
-                                logging.info(f"File {book_file} in author {author_dir} is not in eligible books list.")
-                        else:
-                            logging.warning(f"File {book_file} in author {author_dir} is too short or not a valid file.")
-                else:
-                    logging.info(f"Author directory {author_dir} is not in the eligible books list.")
+                for book_file in os.listdir(author_path):
+                    book_path = os.path.join(author_path, book_file)
+                    if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
+                        all_books.append((book_path, author_dir))
+                        logging.info(f"Selected book: {book_file}")
+                    else:
+                        logging.warning(f"File {book_file} in author {author_dir} is too short or not a valid file.")
             else:
                 logging.warning(f"Author path {author_path} is not a directory.")
     except Exception as e:
@@ -207,22 +196,4 @@ def main():
 
     try:
         with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-    except Exception as e:
-        logging.error(f"Error initializing sample CSV file {sample_file}: {e}")
-        return
-
-    try:
-        with Pool() as pool:
-            results = list(tqdm(pool.imap(process_book, args_list), total=len(args_list)))
-    except Exception as e:
-        logging.error(f"Error found during this multiprocessing: {e}")
-        return
-
-    total_samples = sum(results)
-    logging.info(f"Total samples processed: {total_samples}")
-
-if __name__ == "__main__":
-    main()
+            field
