@@ -163,7 +163,7 @@ def main():
 
     logging.info(f"Total eligible books detected: {len(eligible_books)}")
 
-    input=("press return to continue")
+    input("press return to continue")
     all_books = []
 
     try:
