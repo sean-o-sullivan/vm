@@ -118,8 +118,11 @@ def parse_custom_id(custom_id):
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None, None
 
+
+
 def load_eligible_books(jsonl_path):
     eligible_books = []  # A flat list to store all eligible books
+    yes_count = 0  # Counter for entries with "YES" response
 
     try:
         with open(jsonl_path, 'r', encoding='utf-8') as f:
@@ -129,6 +132,7 @@ def load_eligible_books(jsonl_path):
                     custom_id = entry['custom_id']
                     response_content = entry['response']['body']['choices'][0]['message']['content']
                     if response_content == "YES":
+                        yes_count += 1  # Increment the counter
                         author_name, file_name = parse_custom_id(custom_id)
                         if author_name and file_name:
                             eligible_books.append((author_name, file_name))
@@ -146,7 +150,10 @@ def load_eligible_books(jsonl_path):
     except Exception as e:
         logging.error(f"Error loading eligible books from {jsonl_path}: {e}")
     
-    return eligible_books
+    return eligible_books, yes_count  # Return the count along with the eligible books
+
+
+
 
 
 def main():
@@ -155,15 +162,18 @@ def main():
     sample_file = 'results.csv'
 
     logging.info("Loading eligible books...")
-    eligible_books = load_eligible_books(JSONL_PATH)
+    eligible_books, yes_count = load_eligible_books(JSONL_PATH)
 
     if not eligible_books:
         logging.error("No eligible books found. Exiting.")
         return
 
     logging.info(f"Total eligible books detected: {len(eligible_books)}")
+    logging.info(f"Total 'YES' responses in JSON: {yes_count}")
 
-    input("press return to continue")
+    # Pause and wait
+    input("Press Enter to continue...")
+
     all_books = []
 
     try:
@@ -203,7 +213,7 @@ def main():
 
     try:
         with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
+            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample§
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
     except Exception as e:
