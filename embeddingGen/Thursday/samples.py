@@ -196,4 +196,22 @@ def main():
 
     try:
         with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
-            field
+            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+    except Exception as e:
+        logging.error(f"Error initializing sample CSV file {sample_file}: {e}")
+        return
+
+    try:
+        with Pool() as pool:
+            results = list(tqdm(pool.imap(process_book, args_list), total=len(args_list)))
+    except Exception as e:
+        logging.error(f"Error during multiprocessing: {e}")
+        return
+
+    total_samples = sum(results)
+    logging.info(f"Total samples processed: {total_samples}")
+
+if __name__ == "__main__":
+    main()
