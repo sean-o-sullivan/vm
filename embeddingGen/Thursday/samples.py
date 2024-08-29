@@ -10,7 +10,7 @@ from collections import defaultdict
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 1300  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
-NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
+NO_TOUCH_ZONE = 1000  # the First 1000 characters will be skipped
 MAX_BOOKS = 3  # Maximum number of books to process in total
 
 BIG_TEXT_DIR = '/home/aiadmin/Desktop/datasets/bigText'
@@ -112,14 +112,15 @@ def parse_custom_id(custom_id):
     try:
         author_part, file_part = custom_id.split('-', 1)
         author_name = author_part.replace('_', '__')
-        file_name = file_part.split('_', 1)[-1]  # Extract filename part
+        file_name = file_part.split('_', 1)[-1]  # Extract filename 
         return author_name, file_name
     except Exception as e:
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None, None
 
 def load_eligible_books(jsonl_path):
-    eligible_books = defaultdict(set)
+    eligible_books = []  # A flat list to store all eligible books
+
     try:
         with open(jsonl_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -130,7 +131,7 @@ def load_eligible_books(jsonl_path):
                     if response_content == "YES":
                         author_name, file_name = parse_custom_id(custom_id)
                         if author_name and file_name:
-                            eligible_books[author_name].add(file_name)
+                            eligible_books.append((author_name, file_name))
                             logging.info(f"Eligible book: {author_name} -> {file_name}")
                         else:
                             logging.error(f"Failed to parse custom_id: {custom_id}")
@@ -147,6 +148,7 @@ def load_eligible_books(jsonl_path):
     
     return eligible_books
 
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -159,8 +161,9 @@ def main():
         logging.error("No eligible books found. Exiting.")
         return
 
-    logging.info(f"Eligible authors detected: {list(eligible_books.keys())}")
+    logging.info(f"Total eligible books detected: {len(eligible_books)}")
 
+    input=("press return to continue")
     all_books = []
 
     try:
@@ -171,8 +174,8 @@ def main():
                 for book_file in os.listdir(author_path):
                     book_path = os.path.join(author_path, book_file)
                     if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                        # Check if the book is eligible by matching with the parsed JSONL file
-                        if author_dir in eligible_books and book_file in eligible_books[author_dir]:
+                        # Check if is eligible by matching with the parsed JSONL file
+                        if (author_dir, book_file) in eligible_books:
                             all_books.append((book_path, author_dir))
                             logging.info(f"Selected book: {book_file}")
                         else:
@@ -215,6 +218,4 @@ def main():
     logging.info(f"Total samples processed: {total_samples}")
 
 if __name__ == "__main__":
-    main()
-
     main()
