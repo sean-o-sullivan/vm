@@ -14,81 +14,134 @@ MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
 MAX_BOOKS = 3  # Maximum number of books to process in total
 
-nlp = stanza.Pipeline('en', processors='tokenize')
+try:
+    nlp = stanza.Pipeline('en', processors='tokenize')
+except Exception as e:
+    logging.error(f"Failed to initialize Stanza pipeline: {e}")
+    raise
 
 def get_text_sample(file_path, position):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        file.seek(position)
-        sample = file.read(SAMPLE_LENGTH)
-    return sample
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            file.seek(position)
+            sample = file.read(SAMPLE_LENGTH)
+        return sample
+    except Exception as e:
+        logging.error(f"Error reading text sample from {file_path} at position {position}: {e}")
+        return None
 
 def process_sample(raw_sample):
-    doc = nlp(raw_sample)
-    sentences = [sent.text for sent in doc.sentences]
-    
-    if len(sentences) > 2:
-        processed_sample = ' '.join(sentences[1:-1])
-    else:
-        processed_sample = ''
-    
-    return processed_sample
+    try:
+        doc = nlp(raw_sample)
+        sentences = [sent.text for sent in doc.sentences]
+        
+        if len(sentences) > 2:
+            processed_sample = ' '.join(sentences[1:-1])
+        else:
+            processed_sample = ''
+        
+        return processed_sample
+    except Exception as e:
+        logging.error(f"Error processing sample: {e}")
+        return None
 
 def save_samples_to_csv(author, book_name, samples, sample_file):
-    with open(sample_file, 'a', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        for i, (raw_sample, processed_sample) in enumerate(samples):
-            writer.writerow({
-                'author': author,
-                'book': book_name,
-                'sample_id': i,
-                'raw_sample': raw_sample,
-                'processed_sample': processed_sample
-            })
+    try:
+        with open(sample_file, 'a', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            for i, (raw_sample, processed_sample) in enumerate(samples):
+                writer.writerow({
+                    'author': author,
+                    'book': book_name,
+                    'sample_id': i,
+                    'raw_sample': raw_sample,
+                    'processed_sample': processed_sample
+                })
+    except Exception as e:
+        logging.error(f"Error saving samples to CSV for book {book_name} by {author}: {e}")
 
 def process_book(args):
     file_path, author, max_samples, sample_file = args
     book_name = os.path.basename(file_path)
     logging.info(f"Processing book: {book_name} by {author}")
 
-    file_size = os.path.getsize(file_path)
+    try:
+        file_size = os.path.getsize(file_path)
+    except Exception as e:
+        logging.error(f"Failed to get size for  {file_path}: {e}")
+        return 0
+
+    if file_size < MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
+        logging.warning(f"File {book_name} is too short .")
+        return 0
+
     effective_file_size = max(0, file_size - NO_TOUCH_ZONE)
     max_possible_samples = max(1, (effective_file_size - SAMPLE_LENGTH) // (SAMPLE_LENGTH // 2))
     num_samples = min(max_samples, max_possible_samples)
     
     samples = []
     for shard_id in range(num_samples):
-        position = random.randint(NO_TOUCH_ZONE, max(NO_TOUCH_ZONE, file_size - SAMPLE_LENGTH))
-        raw_sample = get_text_sample(file_path, position)
-        processed_sample = process_sample(raw_sample)
-        
-        if len(processed_sample) < SAMPLE_LENGTH / 2:
-            continue  
-        
-        samples.append((raw_sample, processed_sample))
+        try:
+            position = random.randint(NO_TOUCH_ZONE, max(NO_TOUCH_ZONE, file_size - SAMPLE_LENGTH))
+            raw_sample = get_text_sample(file_path, position)
+            if raw_sample is None:
+                continue
+
+            processed_sample = process_sample(raw_sample)
+            if processed_sample is None or len(processed_sample) < SAMPLE_LENGTH / 2:
+                logging.warning(f"Processed sample from {book_name} at position {position} is too short or failed.")
+                continue  # Skip if the processed sample is too short
+            
+            samples.append((raw_sample, processed_sample))
+        except Exception as e:
+            logging.error(f"Error during sample extraction for {book_name} at position {position}: {e}")
+            continue
     
-    save_samples_to_csv(author, book_name, samples, sample_file)
+    if samples:
+        save_samples_to_csv(author, book_name, samples, sample_file)
+        logging.info(f"Finished processing {file_path} with {len(samples)} samples.")
+    else:
+        logging.warning(f"No valid samples generated for book {book_name}.")
     
-    logging.info(f"Finished processing {file_path}.")
     return len(samples)
 
 def parse_custom_id(custom_id):
-    # Extract author and file parts from the custom_id
-    author_part, file_part = custom_id.split('-', 1)
-    author_name = author_part.replace('_', '__')
-    file_name = file_part.split('_', 1)[-1]  # Extract filename part
-    return author_name, file_name
+    try:
+        author_part, file_part = custom_id.split('-', 1)
+        author_name = author_part.replace('_', '__')
+        file_name = file_part.split('_', 1)[-1]  # Extract filename part
+        return author_name, file_name
+    except Exception as e:
+        logging.error(f"Error parsing custom_id {custom_id}: {e}")
+        return None, None
 
 def load_eligible_books(jsonl_path):
     eligible_books = defaultdict(set)
-    with open(jsonl_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            entry = json.loads(line)
-            custom_id = entry['custom_id']
-            response_content = entry['response']['body']['choices'][0]['message']['content']
-            if response_content == "YES":
-                author_name, file_name = parse_custom_id(custom_id)
-                eligible_books[author_name].add(file_name)
+    try:
+        with open(jsonl_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                try:
+                    entry = json.loads(line)
+                    custom_id = entry['custom_id']
+                    response_content = entry['response']['body']['choices'][0]['message']['content']
+                    if response_content == "YES":
+                        author_name, file_name = parse_custom_id(custom_id)
+                        if author_name and file_name:
+                            eligible_books[author_name].add(file_name)
+                        else:
+                            logging.error(f"Failed to parse custom_id: {custom_id}")
+                    else:
+                        logging.info(f"Book with custom_id {custom_id} is marked as 'NO'. Skipping.")
+                except json.JSONDecodeError as e:
+                    logging.error(f"Error decoding JSON line: {line}. Error: {e}")
+                except KeyError as e:
+                    logging.error(f"KeyError encountered in JSON entry {line}: {e}")
+    except FileNotFoundError:
+        logging.error(f"JSONL file not found: {jsonl_path}")
+    except Exception as e:
+        logging.error(f"Error loading eligible books from {jsonl_path}: {e}")
+    
     return eligible_books
 
 def main():
@@ -98,24 +151,42 @@ def main():
     sample_file = 'samples.csv'
     jsonl_path = 'embeddingGen/batch_dataset_classification_output.jsonl'
 
-    # Load the set of eligible books
+    logging.info("Loading eligible books...")
     eligible_books = load_eligible_books(jsonl_path)
 
-    # Create a list to store all eligible book paths
+    if not eligible_books:
+        logging.error("No eligible books found. Exiting.")
+        return
+
     all_books = []
 
-    # Collect all eligible book paths
-    for author_dir in os.listdir(input_dir):
-        author_path = os.path.join(input_dir, author_dir)
-        if os.path.isdir(author_path):
-            if author_dir in eligible_books:
-                for book_file in os.listdir(author_path):
-                    book_path = os.path.join(author_path, book_file)
-                    if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                        if book_file in eligible_books[author_dir]:
-                            all_books.append((book_path, author_dir))
+    try:
+        for author_dir in os.listdir(input_dir):
+            author_path = os.path.join(input_dir, author_dir)
+            if os.path.isdir(author_path):
+                if author_dir in eligible_books:
+                    for book_file in os.listdir(author_path):
+                        book_path = os.path.join(author_path, book_file)
+                        if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
+                            if book_file in eligible_books[author_dir]:
+                                all_books.append((book_path, author_dir))
+                            else:
+                                logging.info(f"File {book_file} in author {author_dir} is not in eligible books list.")
+                        else:
+                            logging.warning(f"File {book_file} in author {author_dir} is too short or not a valid file.")
+                else:
+                    logging.info(f"Author directory {author_dir} is not in the eligible books list.")
+            else:
+                logging.warning(f"Author path {author_path} is not a directory.")
+    except Exception as e:
+        logging.error(f"Error collecting books from {input_dir}: {e}")
 
-    # Shuffle and limit to MAX_BOOKS
+    if not all_books:
+        logging.error("No books selected for processing. Exiting.")
+        return
+
+    logging.info(f"Total eligible books found: {len(all_books)}")
+
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
 
@@ -123,13 +194,21 @@ def main():
     for book_path, author in selected_books:
         args_list.append((book_path, author, SAMPLES_PER_AUTHOR, sample_file))
 
-    with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+    try:
+        with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+    except Exception as e:
+        logging.error(f"Error initializing sample CSV file {sample_file}: {e}")
+        return
 
-    with Pool() as pool:
-        results = list(tqdm(pool.imap(process_book, args_list), total=len(args_list)))
+    try:
+        with Pool() as pool:
+            results = list(tqdm(pool.imap(process_book, args_list), total=len(args_list)))
+    except Exception as e:
+        logging.error(f"Error found during this multiprocessing: {e}")
+        return
 
     total_samples = sum(results)
     logging.info(f"Total samples processed: {total_samples}")
