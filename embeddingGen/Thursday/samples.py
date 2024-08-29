@@ -4,7 +4,6 @@ import random
 import stanza
 import logging
 import json
-from multiprocessing import Pool
 from tqdm import tqdm
 from collections import defaultdict
 
@@ -190,10 +189,6 @@ def main():
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
 
-    args_list = []
-    for book_path, author in selected_books:
-        args_list.append((book_path, author, SAMPLES_PER_AUTHOR, sample_file))
-
     try:
         with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
             fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
@@ -203,14 +198,11 @@ def main():
         logging.error(f"Error initializing sample CSV file {sample_file}: {e}")
         return
 
-    try:
-        with Pool() as pool:
-            results = list(tqdm(pool.imap(process_book, args_list), total=len(args_list)))
-    except Exception as e:
-        logging.error(f"Error during multiprocessing: {e}")
-        return
+    total_samples = 0
+    for args in tqdm(args_list, total=len(args_list)):
+        samples_processed = process_book(args)
+        total_samples += samples_processed
 
-    total_samples = sum(results)
     logging.info(f"Total samples processed: {total_samples}")
 
 if __name__ == "__main__":
