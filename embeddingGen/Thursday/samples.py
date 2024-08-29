@@ -6,7 +6,6 @@ import logging
 import json
 from tqdm import tqdm
 from collections import defaultdict
-import chardet
 
 
 SAMPLES_PER_AUTHOR = 100
@@ -37,19 +36,22 @@ except Exception as e:
 
 
 def get_text_sample(file_path, position):
-    try:
-        with open(file_path, 'rb') as raw_file:
-            raw_data = raw_file.read(50)  #
-            result = chardet.detect(raw_data)
-            encoding = result['encoding']
-        
-        with open(file_path, 'r', encoding=encoding) as file:
-            file.seek(position)
-            sample = file.read(SAMPLE_LENGTH)
-        return sample
-    except Exception as e:
-        logging.error(f"Error reading text sample from {file_path} at position {position}: {e}")
-        return None
+    encodings = ['utf-8', 'ISO-8859-1', 'windows-1252', 'ascii']
+    
+    for encoding in encodings:
+        try:
+            with open(file_path, 'r', encoding=encoding) as file:
+                file.seek(position)
+                return file.read(SAMPLE_LENGTH)
+        except UnicodeDecodeError:
+            logging.warning(f"Failed to decode {file_path} with {encoding}. Trying next encoding.")
+        except Exception as e:
+            logging.error(f"Error reading text sample from {file_path} at position {position}: {e}")
+            return None
+
+    logging.error(f"Failed to read {file_path} with all attempted encodings.")
+    return None
+
 
 
 
