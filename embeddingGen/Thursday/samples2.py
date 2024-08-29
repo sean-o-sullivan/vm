@@ -23,21 +23,9 @@ except Exception as e:
     logging.error(f"Failed to initialize Stanza pipeline: {e}")
     raise
 
-# def get_text_sample(file_path, position):
-#     try:
-#         with open(file_path, 'r', encoding='utf-8') as file:
-#             file.seek(position)
-#             sample = file.read(SAMPLE_LENGTH)
-#         return sample
-#     except Exception as e:
-#         logging.error(f"Error reading text sample from {file_path} at position {position}: {e}")
-#         return None
-
-
-
 def get_text_sample(file_path, position):
     encodings = ['utf-8', 'ISO-8859-1', 'windows-1252', 'ascii']
-    
+
     for encoding in encodings:
         try:
             with open(file_path, 'r', encoding=encoding) as file:
@@ -52,21 +40,17 @@ def get_text_sample(file_path, position):
     logging.error(f"Failed to read {file_path} with all attempted encodings.")
     return None
 
-
-
-
-
 def process_sample(raw_sample):
     try:
         doc = nlp(raw_sample)
         sentences = [sent.text for sent in doc.sentences]
-        
+
         # Drop the first and last sentences
         if (len(sentences) > 2):
             processed_sample = ' '.join(sentences[1:-1])
         else:
             processed_sample = ''
-        
+
         return processed_sample
     except Exception as e:
         logging.error(f"Error processing sample: {e}")
@@ -106,7 +90,7 @@ def process_book(args):
     effective_file_size = max(0, file_size - NO_TOUCH_ZONE)
     max_possible_samples = max(1, (effective_file_size - SAMPLE_LENGTH) // (SAMPLE_LENGTH // 2))
     num_samples = min(max_samples, max_possible_samples)
-    
+
     samples = []
     for shard_id in range(num_samples):
         try:
@@ -119,18 +103,18 @@ def process_book(args):
             if processed_sample is None or len(processed_sample) < SAMPLE_LENGTH / 2:
                 logging.warning(f"Processed sample from {book_name} at position {position} is too short or failed.")
                 continue  # Skip if the processed sample is too short
-            
+
             samples.append((raw_sample, processed_sample))
         except Exception as e:
             logging.error(f"Error during sample extraction for {book_name} at position {position}: {e}")
             continue
-    
+
     if samples:
         save_samples_to_csv(author, book_name, samples, sample_file)
         logging.info(f"Finished processing {file_path} with {len(samples)} samples.")
     else:
         logging.warning(f"No valid samples were generated for book {book_name}.")
-    
+
     return len(samples)
 
 def parse_custom_id(custom_id):
@@ -142,11 +126,10 @@ def parse_custom_id(custom_id):
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None
 
-
 def load_eligible_books(jsonl_path):
     eligible_books = []
     yes_count = 0
-    
+
     try:
         with open(jsonl_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -242,7 +225,6 @@ def main():
     for book in sorted(not_found_books):
         print(book)
 
-  
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
 
