@@ -7,7 +7,7 @@ import json
 from tqdm import tqdm
 from collections import defaultdict
 
-SAMPLES_PER_AUTHOR = 100
+SAMPLES_PER_AUTHOR = 100e
 SAMPLE_LENGTH = 1300  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
@@ -171,8 +171,12 @@ def main():
                 for book_file in os.listdir(author_path):
                     book_path = os.path.join(author_path, book_file)
                     if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                        all_books.append((book_path, author_dir))
-                        logging.info(f"Selected book: {book_file}")
+                        # Check if the book is eligible by matching with the parsed JSONL file
+                        if author_dir in eligible_books and book_file in eligible_books[author_dir]:
+                            all_books.append((book_path, author_dir))
+                            logging.info(f"Selected book: {book_file}")
+                        else:
+                            logging.info(f"Book {book_file} in author {author_dir} is not eligible.")
                     else:
                         logging.warning(f"File {book_file} in author {author_dir} is too short or not a valid file.")
             else:
@@ -188,6 +192,11 @@ def main():
 
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
+
+    # args_list here
+    args_list = []
+    for book_path, author in selected_books:
+        args_list.append((book_path, author, SAMPLES_PER_AUTHOR, sample_file))
 
     try:
         with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
@@ -206,4 +215,6 @@ def main():
     logging.info(f"Total samples processed: {total_samples}")
 
 if __name__ == "__main__":
+    main()
+
     main()
