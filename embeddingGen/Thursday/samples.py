@@ -110,20 +110,17 @@ def process_book(args):
 
 def parse_custom_id(custom_id):
     try:
-        author_part, file_part = custom_id.split('-', 1)
-        author_name = author_part.replace('_', '__')
-        file_name = file_part.split('_', 1)[-1]  # Extract filename 
-        return author_name, file_name
+        # We only care about the file name part
+        file_name = custom_id.split('-', 1)[-1].split('_', 1)[-1]  # Extract filename part
+        return file_name
     except Exception as e:
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
-        return None, None
-
+        return None
 
 
 def load_eligible_books(jsonl_path):
-    eligible_books = []  # A flat list to store all eligible books
-    yes_count = 0  # Counter for entries with "YES" response
-
+    eligible_books = [] 
+    yes_count = 0  
     try:
         with open(jsonl_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -133,10 +130,10 @@ def load_eligible_books(jsonl_path):
                     response_content = entry['response']['body']['choices'][0]['message']['content']
                     if response_content == "YES":
                         yes_count += 1  # Increment the counter
-                        author_name, file_name = parse_custom_id(custom_id)
-                        if author_name and file_name:
-                            eligible_books.append((author_name, file_name))
-                            logging.info(f"Eligible book: {author_name} -> {file_name}")
+                        file_name = parse_custom_id(custom_id)
+                        if file_name:
+                            eligible_books.append(file_name)
+                            logging.info(f"Eligible book: {file_name}")
                         else:
                             logging.error(f"Failed to parse custom_id: {custom_id}")
                     else:
@@ -151,10 +148,6 @@ def load_eligible_books(jsonl_path):
         logging.error(f"Error loading eligible books from {jsonl_path}: {e}")
     
     return eligible_books, yes_count  # Return the count along with the eligible books
-
-
-
-
 
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -171,8 +164,7 @@ def main():
     logging.info(f"Total eligible books detected: {len(eligible_books)}")
     logging.info(f"Total 'YES' responses in JSON: {yes_count}")
 
-    # Pause and wait
-    input("Press Enter to continue...")
+    input("Press Enter to begin matching files...")
 
     all_books = []
 
@@ -183,15 +175,19 @@ def main():
             if os.path.isdir(author_path):
                 for book_file in os.listdir(author_path):
                     book_path = os.path.join(author_path, book_file)
-                    if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                        # Check if is eligible by matching with the parsed JSONL file
-                        if (author_dir, book_file) in eligible_books:
+                    logging.info(f"Attempting to match: Book = {book_file}")
+
+                    # Pause to view the current book being processed
+                    input(f"Inspecting: {book_file}. Press Enter to continue...")
+
+                    if book_file in eligible_books:
+                        if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
                             all_books.append((book_path, author_dir))
-                            logging.info(f"Selected book: {book_file}")
+                            logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
                         else:
-                            logging.info(f"Book {book_file} in author {author_dir} is not eligible.")
+                            logging.warning(f"File {book_file} is too short or not a valid file.")
                     else:
-                        logging.warning(f"File {book_file} in author {author_dir} is too short or not a valid file.")
+                        logging.info(f"No match found for book {book_file}.")
             else:
                 logging.warning(f"Author path {author_path} is not a directory.")
     except Exception as e:
@@ -202,6 +198,9 @@ def main():
         return
 
     logging.info(f"Total eligible books found: {len(all_books)}")
+
+    # Pause before processing the books
+    input("Press Enter to start processing the selected books...")
 
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
