@@ -206,7 +206,7 @@ def main():
                     # Pause to inspect the current book being processed
                     # input(f"Inspecting: {book_file}. Press Enter to continue...")
 
-                    if book_file in eligible_books:
+                    if book_file.lower() in [eligible_book.lower() for eligible_book in eligible_books]:
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
                             all_books.append((book_path, author_dir))
                             logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
