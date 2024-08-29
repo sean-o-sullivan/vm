@@ -181,8 +181,8 @@ def main():
                     book_path = os.path.join(author_path, book_file)
                     logging.info(f"Attempting to match: Book = {book_file}")
 
-                    # Pause to view the current book being processed
-                    input(f"Inspecting: {book_file}. Press Enter to continue...")
+                    # Pause to inspect the current book being processed
+                    # input(f"Inspecting: {book_file}. Press Enter to continue...")
 
                     if book_file in eligible_books:
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
