@@ -6,6 +6,8 @@ import logging
 import json
 from tqdm import tqdm
 from collections import defaultdict
+import chardet
+
 
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 20000  # Number of characters per sample
@@ -22,15 +24,35 @@ except Exception as e:
     logging.error(f"Failed to initialize Stanza pipeline: {e}")
     raise
 
+# def get_text_sample(file_path, position):
+#     try:
+#         with open(file_path, 'r', encoding='utf-8') as file:
+#             file.seek(position)
+#             sample = file.read(SAMPLE_LENGTH)
+#         return sample
+#     except Exception as e:
+#         logging.error(f"Error reading text sample from {file_path} at position {position}: {e}")
+#         return None
+
+
+
 def get_text_sample(file_path, position):
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, 'rb') as raw_file:
+            raw_data = raw_file.read(50)  #
+            result = chardet.detect(raw_data)
+            encoding = result['encoding']
+        
+        with open(file_path, 'r', encoding=encoding) as file:
             file.seek(position)
             sample = file.read(SAMPLE_LENGTH)
         return sample
     except Exception as e:
         logging.error(f"Error reading text sample from {file_path} at position {position}: {e}")
         return None
+
+
+
 
 def process_sample(raw_sample):
     try:
