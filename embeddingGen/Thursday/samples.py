@@ -163,7 +163,7 @@ def main():
 
     logging.info(f"Total eligible books detected: {len(eligible_books)}")
     for i in range(0,5):
-        print(f"eligible_books[i]\n")
+        print(f"{eligible_books[i]}\n")
         
         
     logging.info(f"Total 'YES' responses in JSON: {yes_count}")
