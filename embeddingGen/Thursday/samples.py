@@ -15,7 +15,7 @@ NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
 MAX_BOOKS = 3  # Maximum number of books to process in total
 
 BIG_TEXT_DIR = '/home/aiadmin/Desktop/datasets/bigText'
-JSONL_PATH = '/home/aiadmin/Desktop/datasets/embeddingGen/batch_dataset_classification_output.jsonl'
+JSONL_PATH = '/home/aiadmin/Desktop/code/vm/embeddingGen/batch_dataset_classification_output.jsonl'
 
 try:
     nlp = stanza.Pipeline('en', processors='tokenize')
