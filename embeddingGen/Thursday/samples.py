@@ -156,7 +156,7 @@ def load_eligible_books(jsonl_path):
 
 
 
-def main():
+def main()
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     sample_file = 'results.csv'
@@ -213,7 +213,7 @@ def main():
 
     try:
         with open(sample_file, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample§
+            fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
     except Exception as e:
