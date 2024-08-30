@@ -6,13 +6,13 @@ import logging
 import json
 from tqdm import tqdm
 from collections import defaultdict
-import re 
+import re
 
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 20000  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
-MAX_BOOKS = 5000 # Maximum number of books to process in total
+MAX_BOOKS = 5000  # Maximum number of books to process in total
 
 BIG_TEXT_DIR = '/home/aiadmin/Desktop/datasets/bigText'
 JSONL_PATH = '/home/aiadmin/Desktop/code/vm/embeddingGen/batch_dataset_classification_output.jsonl'
@@ -46,7 +46,7 @@ def process_sample(raw_sample):
         sentences = [sent.text for sent in doc.sentences]
 
         # Drop the first and last sentences
-        if (len(sentences) > 2):
+        if len(sentences) > 2:
             processed_sample = ' '.join(sentences[1:-1])
         else:
             processed_sample = ''
@@ -138,7 +138,8 @@ def load_eligible_books(jsonl_path):
 
     try:
         with open(jsonl_path, 'r', encoding='utf-8') as f:
-            for line in f:
+            lines = f.readlines()
+            for line in tqdm(lines, desc="Processing JSONL entries"):
                 try:
                     entry = json.loads(line)
                     custom_id = entry['custom_id']
@@ -274,7 +275,7 @@ def main():
         return
 
     total_samples = 0
-    for args in tqdm(args_list, total=len(args_list)):
+    for args in tqdm(args_list, total=len(args_list), desc="Processing books"):
         samples_processed = process_book(args)
         total_samples += samples_processed
 
