@@ -15,6 +15,7 @@ MAX_BOOKS = 5000  # Maximum number of books to process in total
 
 BIG_TEXT_DIR = '/home/aiadmin/Desktop/datasets/bigText'
 JSONL_PATH = '/home/aiadmin/Desktop/code/vm/embeddingGen/batch_dataset_classification_output.jsonl'
+CSV_PATH = 'file_author_map.csv'  # CSV file to store file paths and authors
 
 try:
     nlp = stanza.Pipeline('en', processors='tokenize')
@@ -125,8 +126,6 @@ def process_book(args):
     return len(samples)
 
 
-
-
 def parse_custom_id(custom_id):
     try:
         # Extract the filename part
@@ -191,21 +190,48 @@ def load_eligible_books(jsonl_path):
 
     return file_author_map, yes_count
 
+def save_file_author_map(file_author_map, csv_path):
+    try:
+        with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            fieldnames = ['file_path', 'author']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for file_path, author in file_author_map:
+                writer.writerow({'file_path': file_path, 'author': author})
+    except Exception as e:
+        logging.error(f"Error saving file-author map to CSV: {e}")
+
+def load_file_author_map(csv_path):
+    file_author_map = []
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                file_author_map.append((row['file_path'], row['author']))
+    except Exception as e:
+        logging.error(f"Error loading file-author map from CSV: {e}")
+    return file_author_map
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     sample_file = 'results_10KSample.csv'
 
-    logging.info("Loading eligible books...")
-    file_author_map, yes_count = load_eligible_books(JSONL_PATH)
+    if os.path.exists(CSV_PATH):
+        logging.info(f"Loading file-author map from {CSV_PATH}")
+        file_author_map = load_file_author_map(CSV_PATH)
+    else:
+        logging.info("Loading eligible books...")
+        file_author_map, yes_count = load_eligible_books(JSONL_PATH)
 
-    if not file_author_map:
-        logging.error("No eligible books found. Exiting.")
-        return
+        if not file_author_map:
+            logging.error("No eligible books found. Exiting.")
+            return
 
-    logging.info(f"Total eligible books detected: {len(file_author_map)}")
+        logging.info(f"Total eligible books detected: {len(file_author_map)}")
+        logging.info(f"Total 'YES' responses in JSON: {yes_count}")
 
-    logging.info(f"Total 'YES' responses in JSON: {yes_count}")
+        save_file_author_map(file_author_map, CSV_PATH)
 
     random.shuffle(file_author_map)
     selected_books = file_author_map[:MAX_BOOKS]
