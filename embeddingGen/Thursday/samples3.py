@@ -164,6 +164,8 @@ def load_eligible_books(jsonl_path):
 
     return eligible_books, yes_count
 
+
+
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -197,8 +199,8 @@ def main():
                     book_path = os.path.join(author_path, book_file)
                     logging.info(f"Attempting to match: Book = {book_file}")
 
-                    # Check if any eligible book ID is contained within the book_file name
-                    matching_books = [book_id for book_id in eligible_books if book_id.lower() in book_file.lower()]
+                    # Check if the book_file starts with any eligible book ID and contains an underscore
+                    matching_books = [book_id for book_id in eligible_books if book_file.lower().startswith(book_id.lower() + "_")]
 
                     if matching_books:
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
@@ -260,4 +262,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
