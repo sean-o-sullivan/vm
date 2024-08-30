@@ -71,6 +71,8 @@ def save_samples_to_csv(author, book_name, samples, sample_file):
     except Exception as e:
         logging.error(f"Error saving samples to CSV for book {book_name} by {author}: {e}")
 
+
+
 def process_book(args):
     file_path, author, max_samples, sample_file = args
     book_name = os.path.basename(file_path)
@@ -82,18 +84,19 @@ def process_book(args):
         logging.error(f"Failed to get size for file {file_path}: {e}")
         return 0
 
-    if file_size < MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
+    if file_size < MIN_BOOK_LENGTH + 2 * NO_TOUCH_ZONE:  # Adjusted to account for the no touch zone at both ends
         logging.warning(f"File {book_name} is too short to process.")
         return 0
 
-    effective_file_size = max(0, file_size - NO_TOUCH_ZONE)
+    # Effective size excluding the no-touch zones at the beginning and end
+    effective_file_size = file_size - 2 * NO_TOUCH_ZONE
     max_possible_samples = max(1, (effective_file_size - SAMPLE_LENGTH) // (SAMPLE_LENGTH // 2))
     num_samples = min(max_samples, max_possible_samples)
 
     samples = []
     for shard_id in range(num_samples):
         try:
-            position = random.randint(NO_TOUCH_ZONE, max(NO_TOUCH_ZONE, file_size - SAMPLE_LENGTH))
+            position = random.randint(NO_TOUCH_ZONE, file_size - NO_TOUCH_ZONE - SAMPLE_LENGTH)
             raw_sample = get_text_sample(file_path, position)
             if raw_sample is None:
                 continue
@@ -115,6 +118,9 @@ def process_book(args):
         logging.warning(f"No valid samples were generated for book {book_name}.")
 
     return len(samples)
+
+
+
 
 def parse_custom_id(custom_id):
     try:
