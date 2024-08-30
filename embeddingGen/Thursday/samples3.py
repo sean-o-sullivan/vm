@@ -6,7 +6,7 @@ import logging
 import json
 from tqdm import tqdm
 from collections import defaultdict
-
+import re 
 
 SAMPLES_PER_AUTHOR = 100
 SAMPLE_LENGTH = 20000  # Number of characters per sample
