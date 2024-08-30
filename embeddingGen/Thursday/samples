@@ -1,0 +1,1 @@
+for file in *.txt; do echo "File: $file"; cat "$file" | head -c 1000; echo -e "\n---\n"; done
