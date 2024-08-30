@@ -5,7 +5,6 @@ import stanza
 import logging
 import json
 from tqdm import tqdm
-from collections import defaultdict
 import re
 
 SAMPLES_PER_AUTHOR = 100
@@ -135,6 +134,7 @@ def parse_custom_id(custom_id):
 def load_eligible_books(jsonl_path):
     eligible_books = []
     yes_count = 0
+    file_author_map = []
 
     try:
         with open(jsonl_path, 'r', encoding='utf-8') as f:
@@ -151,27 +151,20 @@ def load_eligible_books(jsonl_path):
                             eligible_books.append(book_id)
                             logging.info(f"Eligible book ID: {book_id}")
                             
-                            # New: Stop after finding the corresponding entry
-                            print(f"\nFound corresponding entry in JSONL file.")
-                            print(f"Book ID to search for: {book_id}")
-                            print(f"Search method: Will look for filenames starting with '{book_id}' (case-insensitive)")
-                            input("Press Enter to continue searching for this file...")
-                            
                             # Search for the file
                             found = False
                             for root, dirs, files in os.walk(BIG_TEXT_DIR):
                                 for file in files:
                                     if file.lower().startswith(book_id.lower()):
-                                        print(f"Found matching file: {os.path.join(root, file)}")
+                                        file_author_map.append((os.path.join(root, file), os.path.basename(root)))
+                                        logging.info(f"Found matching file: {os.path.join(root, file)}")
                                         found = True
                                         break
                                 if found:
                                     break
                             
                             if not found:
-                                print(f"No matching file found for {book_id}")
-                            
-                            input("Press Enter to continue processing the next entry...")
+                                logging.warning(f"No matching file found for {book_id}")
                         else:
                             logging.error(f"Failed to parse custom_id: {custom_id}")
                     else:
@@ -185,7 +178,7 @@ def load_eligible_books(jsonl_path):
     except Exception as e:
         logging.error(f"Error loading eligible books from {jsonl_path}: {e}")
 
-    return eligible_books, yes_count
+    return file_author_map, yes_count
 
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -193,72 +186,18 @@ def main():
     sample_file = 'results.csv'
 
     logging.info("Loading eligible books...")
-    eligible_books, yes_count = load_eligible_books(JSONL_PATH)
+    file_author_map, yes_count = load_eligible_books(JSONL_PATH)
 
-    if not eligible_books:
+    if not file_author_map:
         logging.error("No eligible books found. Exiting.")
         return
 
-    logging.info(f"Total eligible books detected: {len(eligible_books)}")
-    for i in range(0,5):
-        print(f"{eligible_books[i]}\n")
+    logging.info(f"Total eligible books detected: {len(file_author_map)}")
 
     logging.info(f"Total 'YES' responses in JSON: {yes_count}")
 
-    # First halt
-    input("Press Enter to begin matching files...")
-
-    all_books = []
-    found_books = set()
-
-    try:
-        for author_dir in os.listdir(BIG_TEXT_DIR):
-            author_path = os.path.join(BIG_TEXT_DIR, author_dir)
-            logging.info(f"Checking author directory: {author_dir}")
-            if os.path.isdir(author_path):
-                for book_file in os.listdir(author_path):
-                    book_path = os.path.join(author_path, book_file)
-                    logging.info(f"Attempting to match: Book = {book_file}")
-
-                    # Check if the book_file starts with any eligible book ID and contains an underscore
-                    matching_books = [book_id for book_id in eligible_books if book_file.lower().startswith(book_id.lower())]
-
-                    if matching_books:
-                        if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                            all_books.append((book_path, author_dir))
-                            found_books.add(book_file.lower())
-                            logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
-                        else:
-                            logging.warning(f"File {book_file} is too short or not a valid file.")
-                    else:
-                        logging.info(f"No match found for book {book_file}.")
-            else:
-                logging.warning(f"Author path {author_path} is not a directory.")
-    except Exception as e:
-        logging.error(f"Error collecting books from {BIG_TEXT_DIR}: {e}")
-
-    if not all_books:
-        logging.error("No books selected for processing. Exiting.")
-        return
-
-    logging.info(f"Total eligible books found: {len(all_books)}")
-
-    # Second halt
-    input("Press Enter to start processing the selected books...")
-
-    # Find books that were not found in the corpus
-    not_found_books = set(book.lower() for book in eligible_books) - found_books
-
-    # Third halt and print not found books
-    print(f"\nNumber of books not found in the corpus: {len(not_found_books)}")
-    input("Press Enter to see the list of books not found in the corpus...")
-
-    print("\nBooks not found in the corpus:")
-    for book in sorted(not_found_books):
-        print(book)
-
-    random.shuffle(all_books)
-    selected_books = all_books[:MAX_BOOKS]
+    random.shuffle(file_author_map)
+    selected_books = file_author_map[:MAX_BOOKS]
 
     # Define args_list here
     args_list = []
