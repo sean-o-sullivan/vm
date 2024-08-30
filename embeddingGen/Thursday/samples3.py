@@ -8,7 +8,7 @@ from tqdm import tqdm
 from collections import defaultdict
 import re 
 
-SAMPLES_PER_AUTHOR = 100
+SAMPLES_PER_AUTHOR = 10
 SAMPLE_LENGTH = 20000  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
@@ -169,7 +169,7 @@ def load_eligible_books(jsonl_path):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    sample_file = 'results.csv'
+    sample_file = 'resultsDummy.csv'
 
     logging.info("Loading eligible books...")
     eligible_books, yes_count = load_eligible_books(JSONL_PATH)
@@ -200,7 +200,7 @@ def main():
                     logging.info(f"Attempting to match: Book = {book_file}")
 
                     # Check if the book_file starts with any eligible book ID and contains an underscore
-                    matching_books = [book_id for book_id in eligible_books if book_file.lower().startswith(book_id.lower() + "_")]
+                    matching_books = [book_id for book_id in eligible_books if book_file.lower().startswith(book_id.lower())]
 
                     if matching_books:
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
