@@ -132,13 +132,6 @@ def parse_custom_id(custom_id):
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None
 
-def extract_id_from_filename(filename):
-    # Extract the book ID from a filename (assuming IDs are followed by an underscore)
-    match = re.match(r'^(\d+)_', filename)
-    if match:
-        return match.group(1).lower()  # Convert to lower case for consistent matching
-    return None
-
 def load_eligible_books(jsonl_path):
     eligible_books = []
     yes_count = 0
@@ -155,8 +148,30 @@ def load_eligible_books(jsonl_path):
                         yes_count += 1
                         book_id = parse_custom_id(custom_id)
                         if book_id:
-                            eligible_books.append(book_id.lower())  # Store as lowercase for consistent matching
+                            eligible_books.append(book_id)
                             logging.info(f"Eligible book ID: {book_id}")
+                            
+                            # New: Stop after finding the corresponding entry
+                            print(f"\nFound corresponding entry in JSONL file.")
+                            print(f"Book ID to search for: {book_id}")
+                            print(f"Search method: Will look for filenames starting with '{book_id}' (case-insensitive)")
+                            input("Press Enter to continue searching for this file...")
+                            
+                            # Search for the file
+                            found = False
+                            for root, dirs, files in os.walk(BIG_TEXT_DIR):
+                                for file in files:
+                                    if file.lower().startswith(book_id.lower()):
+                                        print(f"Found matching file: {os.path.join(root, file)}")
+                                        found = True
+                                        break
+                                if found:
+                                    break
+                            
+                            if not found:
+                                print(f"No matching file found for {book_id}")
+                            
+                            input("Press Enter to continue processing the next entry...")
                         else:
                             logging.error(f"Failed to parse custom_id: {custom_id}")
                     else:
@@ -205,12 +220,13 @@ def main():
                     book_path = os.path.join(author_path, book_file)
                     logging.info(f"Attempting to match: Book = {book_file}")
 
-                    # Extract book ID from filename and match with eligible books
-                    book_id = extract_id_from_filename(book_file)
-                    if book_id and book_id in eligible_books:
+                    # Check if the book_file starts with any eligible book ID and contains an underscore
+                    matching_books = [book_id for book_id in eligible_books if book_file.lower().startswith(book_id.lower())]
+
+                    if matching_books:
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
                             all_books.append((book_path, author_dir))
-                            found_books.add(book_id)  # Add the ID, not the full filename
+                            found_books.add(book_file.lower())
                             logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
                         else:
                             logging.warning(f"File {book_file} is too short or not a valid file.")
@@ -231,7 +247,7 @@ def main():
     input("Press Enter to start processing the selected books...")
 
     # Find books that were not found in the corpus
-    not_found_books = set(eligible_books) - found_books
+    not_found_books = set(book.lower() for book in eligible_books) - found_books
 
     # Third halt and print not found books
     print(f"\nNumber of books not found in the corpus: {len(not_found_books)}")
