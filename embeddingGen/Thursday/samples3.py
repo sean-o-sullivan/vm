@@ -117,12 +117,11 @@ def process_book(args):
 
     return len(samples)
 
-
 def parse_custom_id(custom_id):
     try:
         # Extract the filename part
         file_name = custom_id.split('-', 1)[-1]
-        # Extract the unique ID and underscore
+        # Extract the unique ID and underscore from the start of the filename
         match = re.match(r'^(\d+_)', file_name)
         if match:
             return match.group(1)
@@ -165,10 +164,7 @@ def load_eligible_books(jsonl_path):
 
     return eligible_books, yes_count
 
-
 def main():
-    input("this one no worko, press Enter if you wish to continue")
-    
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     sample_file = 'results.csv'
@@ -201,13 +197,13 @@ def main():
                     book_path = os.path.join(author_path, book_file)
                     logging.info(f"Attempting to match: Book = {book_file}")
 
-                    # Check if the book file starts with any of the eligible book IDs
-                    matching_id = next((book_id for book_id in eligible_books if book_file.startswith(book_id)), None)
-                    
-                    if matching_id:
+                    # Check if any eligible book ID is contained within the book_file name
+                    matching_books = [book_id for book_id in eligible_books if book_id.lower() in book_file.lower()]
+
+                    if matching_books:
                         if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
                             all_books.append((book_path, author_dir))
-                            found_books.add(matching_id)
+                            found_books.add(book_file.lower())
                             logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
                         else:
                             logging.warning(f"File {book_file} is too short or not a valid file.")
@@ -217,7 +213,6 @@ def main():
                 logging.warning(f"Author path {author_path} is not a directory.")
     except Exception as e:
         logging.error(f"Error collecting books from {BIG_TEXT_DIR}: {e}")
-
 
     if not all_books:
         logging.error("No books selected for processing. Exiting.")
@@ -265,3 +260,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
