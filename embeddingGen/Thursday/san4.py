@@ -55,23 +55,28 @@ def process_sample(raw_sample):
         logging.error(f"Error processing sample: {e}")
         return None
 
+
 def save_samples_to_csv(author, book_name, samples, sample_file):
+    delimiter = "#/#\#|||#/#\#|||#/#\#"
+    
     try:
         with open(sample_file, 'a', newline='', encoding='utf-8') as csvfile:
             fieldnames = ['author', 'book', 'sample_id', 'raw_sample', 'processed_sample']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            
             for i, (raw_sample, processed_sample) in enumerate(samples):
+                # Insert the custom delimiter between raw and processed samples
+                processed_sample_with_delimiter = f"{raw_sample}{delimiter}{processed_sample}"
+                
                 writer.writerow({
                     'author': author,
                     'book': book_name,
                     'sample_id': i,
-                    'raw_sample': raw_sample,
-                    'processed_sample': processed_sample
+                    'processed_sample': processed_sample_with_delimiter
                 })
     except Exception as e:
         logging.error(f"Error saving samples to CSV for book {book_name} by {author}: {e}")
-
-
+        
 
 def process_book(args):
     file_path, author, max_samples, sample_file = args
