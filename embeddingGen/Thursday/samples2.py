@@ -117,10 +117,12 @@ def process_book(args):
 
     return len(samples)
 
+
 def parse_custom_id(custom_id):
     try:
-        # Extract the unique number identifier from the custom_id
-        match = re.match(r'(\d+)_', custom_id)
+        # Remove the author ID, then extract the unique number identifier
+        _, file_part = custom_id.split('-', 1)
+        match = re.match(r'(\d+)_', file_part)
         if match:
             return match.group(1)
         else:
