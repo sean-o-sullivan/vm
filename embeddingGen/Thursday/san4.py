@@ -8,7 +8,7 @@ from tqdm import tqdm
 import re
 
 SAMPLES_PER_AUTHOR = 10
-SAMPLE_LENGTH = 20000  # Number of characters per sample
+SAMPLE_LENGTH = 10000  # Number of characters per sample
 MIN_BOOK_LENGTH = SAMPLE_LENGTH * 2
 NO_TOUCH_ZONE = 1000  # First 1000 characters will be skipped
 MAX_BOOKS = 5000  # Maximum number of books to process in total
@@ -194,7 +194,7 @@ def load_eligible_books(jsonl_path):
 def main():
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    sample_file = 'results.csv'
+    sample_file = 'results_10KSample.csv'
 
     logging.info("Loading eligible books...")
     file_author_map, yes_count = load_eligible_books(JSONL_PATH)
