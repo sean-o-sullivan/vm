@@ -167,6 +167,8 @@ def load_eligible_books(jsonl_path):
 
 
 def main():
+    input("this one no worko, press Enter if you wish to continue")
+    
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     sample_file = 'results.csv'
