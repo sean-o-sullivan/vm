@@ -119,9 +119,13 @@ def process_book(args):
 
 def parse_custom_id(custom_id):
     try:
-        # We only care about the file name part
-        file_name = custom_id.split('-', 1)[-1]  # Extract filename part
-        return file_name
+        # Extract the unique number identifier from the custom_id
+        match = re.match(r'(\d+)_', custom_id)
+        if match:
+            return match.group(1)
+        else:
+            logging.error(f"Failed to parse custom_id: {custom_id}")
+            return None
     except Exception as e:
         logging.error(f"Error parsing custom_id {custom_id}: {e}")
         return None
@@ -139,10 +143,10 @@ def load_eligible_books(jsonl_path):
                     response_content = entry['response']['body']['choices'][0]['message']['content']
                     if response_content == "YES":
                         yes_count += 1
-                        file_name = parse_custom_id(custom_id)
-                        if file_name:
-                            eligible_books.append(file_name)
-                            logging.info(f"Eligible book: {file_name}")
+                        file_id = parse_custom_id(custom_id)
+                        if file_id:
+                            eligible_books.append(file_id)
+                            logging.info(f"Eligible book ID: {file_id}")
                         else:
                             logging.error(f"Failed to parse custom_id: {custom_id}")
                     else:
@@ -191,15 +195,21 @@ def main():
                     book_path = os.path.join(author_path, book_file)
                     logging.info(f"Attempting to match: Book = {book_file}")
 
-                    if book_file.lower() in [eligible_book.lower() for eligible_book in eligible_books]:
-                        if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
-                            all_books.append((book_path, author_dir))
-                            found_books.add(book_file.lower())
-                            logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
+                    # Extract the ID from the filename
+                    file_id_match = re.match(r'(\d+)_', book_file)
+                    if file_id_match:
+                        file_id = file_id_match.group(1)
+                        if file_id in eligible_books:
+                            if os.path.isfile(book_path) and os.path.getsize(book_path) >= MIN_BOOK_LENGTH + NO_TOUCH_ZONE:
+                                all_books.append((book_path, author_dir))
+                                found_books.add(file_id)
+                                logging.info(f"Matched and selected book: {book_file} under author {author_dir}")
+                            else:
+                                logging.warning(f"File {book_file} is too short or not a valid file.")
                         else:
-                            logging.warning(f"File {book_file} is too short or not a valid file.")
+                            logging.info(f"No match found for book {book_file}.")
                     else:
-                        logging.info(f"No match found for book {book_file}.")
+                        logging.warning(f"Could not extract ID from filename: {book_file}")
             else:
                 logging.warning(f"Author path {author_path} is not a directory.")
     except Exception as e:
@@ -215,15 +225,15 @@ def main():
     input("Press Enter to start processing the selected books...")
 
     # Find books that were not found in the corpus
-    not_found_books = set(book.lower() for book in eligible_books) - found_books
+    not_found_books = set(eligible_books) - found_books
 
     # Third halt and print not found books
     print(f"\nNumber of books not found in the corpus: {len(not_found_books)}")
     input("Press Enter to see the list of books not found in the corpus...")
 
     print("\nBooks not found in the corpus:")
-    for book in sorted(not_found_books):
-        print(book)
+    for book_id in sorted(not_found_books):
+        print(book_id)
 
     random.shuffle(all_books)
     selected_books = all_books[:MAX_BOOKS]
