@@ -14,7 +14,7 @@ def process_jsonl_files(input_jsonl, output_jsonl, output_csv):
             entry = json.loads(line)
             custom_id = entry['custom_id']
             input_data[custom_id] = {
-                'text': entry['body']['messages'][0]['content'],
+                'text': ' '.join(entry['body']['messages'][0]['content'].split()),  # Remove all newlines and extra spaces
                 'author': custom_id.split('-')[0].replace('__', ' ').replace('_', ' ')
             }
 
@@ -23,7 +23,7 @@ def process_jsonl_files(input_jsonl, output_jsonl, output_csv):
     with open(output_jsonl, 'r', encoding='utf-8') as f, \
          open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
         
-        csv_writer = csv.writer(csvfile)
+        csv_writer = csv.writer(csvfile, quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(['custom_id', 'author', 'text']) 
 
         for line in tqdm(f, desc="Processing output JSONL"):
