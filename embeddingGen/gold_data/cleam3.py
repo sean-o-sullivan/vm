@@ -7,7 +7,7 @@ def find_true_end(text, initial_end_pos, lookahead_range=1000):
         
         lookahead_text = text[current_end_pos:current_end_pos + lookahead_range]
         # Search for another "end" sequence within the lookahead range
-        next_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', lookahead_text)
+        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
 
         if next_end_match:
             current_end_pos += next_end_match.end()
@@ -30,13 +30,13 @@ def remove_table_from_text(text):
             break
 
         start_pos = position + start_match.start()
-        print(f"start pos is: {start_pos}")
+        print(f"Start position of table: {start_pos}")
 
-        # Append the text before the current table
+        # append the text before the current table
         cleaned_text += text[position:start_pos].strip() + "\n"
 
         # Step 2: Find the first occurrence of sequences of `=`, `-`, `.` or dashes after the ALL CAPS word
-        first_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', text[start_pos:])
+        first_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', text[start_pos:])
         
         if not first_end_match:
             # No end sequence found after this ALL CAPS word, continue searching
@@ -47,12 +47,14 @@ def remove_table_from_text(text):
 
         # Step 3: Find the true end of the table by looking ahead 1000 characters
         true_end_pos = find_true_end(text, initial_end_pos)
-
-        # Update the position to continue searching after the end of the removed table
+        table_content = text[start_pos:true_end_pos]
+        print(f"Removing table from position {start_pos} to {true_end_pos}")
+        print("Table content:")
+        print(table_content)
+        print("----")
         position = true_end_pos
 
     return cleaned_text.strip()
-
 
 
 # Example usage with a test case
@@ -71,9 +73,6 @@ Some more text in the table
 Another section of the table
 ---------------------------
 TEXT AFTER
-
-
-
 
 
 TABLE 1.--PROGRESS AND METHODS OF EXCAVATION IN GOOD GROUND. THIRTY-THIRD STREET. ============================================================ 1 2 3 -----------------------------+--------+--------------------+ Type of excavation. Tunnels. Worked from: -----------------------------+--------+--------------------+ Full-sized single tunnel B 1st Ave. shaft. Full-sized single tunnel A 1st Ave. shaft. Full-sized twin tunnel A and B 1st Ave. shaft. Full-sized twin tunnel A and B Intermediate shaft. (West of shaft.) Full-sized twin tunnel A and B Intermediate shaft. (East of shaft.) Full-sized twin tunnel A and B Intermediate shaft. (East of shaft.) Exploration drift A and B Intermediate shaft. (West of shaft.) Twin tunnel. Enlargement A and B West shaft. of exploration drift (East of shaft.) =============================+========+===================== ====================================================================== 4 5 6 7 ----------------------------------+--------+------------+------------+ Length Average DATES. Time tunnel advance ---------------------------------- elapsed, excavated, per day, in in in From To days. linear feet. linear feet. ----------------------------------+--------+------------+------------+ Feb. 28, 1906. May 12, 1906. 74 346 4.7 Feb. 28, 1906. Apr. 30, 1906. 62 255 4.1 Aug. 23, 1906. Jan. 5, 1907. 136 789 5.8 Apr. 4, 1906. Oct. 31, 1906. 210 730 3.5 Apr. 4, 1906. Oct. 31, 1906. 210 783 3.7 Nov. 1, 1906. Dec. 26, 1906. 56 311 5.5 Mar. 1, 1907. July 23, 1907. 145 947 6.5 Sept. 6, 1907. Dec. 4, 1907. 89 603 6.8 ===============+==================+========+============+============= ===================================================== 8 ----------------------------------------------------- Methods and conditions. ----------------------------------------------------- Top heading and bench. Muck loaded by hand. "" "" "" "" "" "" "" "" Top full-width heading and bench. Muck loaded by steam shovel. Working exclusively on this heading. Top center heading and bench. Muck loaded by steam shovel. Working alternately in headings east and west of the shaft. Top center heading and bench. Muck loaded by steam shovel. Working alternately in headings east and west of the shaft. Top full-width heading and bench. Muck loaded by steam shovel working exclusively on this heading. Exploration drift about 9 ft. by 12 ft. Mucking by hand. "" "" "" "" "" "" "" "" Top full-width heading and bench. Muck loaded by steam shovel working exclusively on this heading. =============================+========+===================== ====================================================
