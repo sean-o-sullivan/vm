@@ -44,8 +44,10 @@ def clean_text(text):
     text = re.sub(r'([!?.]){2,}', r'\1', text)
     text = re.sub(r'\s+([,.!?:;])', r'\1', text)
     text = re.sub(r'([,.!?:;])\s+', r'\1 ', text)
-    text = re.sub(r'\(\s*\)', '', text)  #  empty parentheses
-    text = re.sub(r'\(\s*[a-z]\s*\)', '', text)  #  :(a), :(b), etc.
+    
+    text = re.sub(r'\(\s*\)', '', text)  # Removes empty parentheses
+    text = re.sub(r'\(\s*[a-z]\s*\)', '', text)  # Removes :(a), :(b), etc.
+    text = re.sub(r'\(\s*(Pl\.\s*\d+\s*,)?\s*Fig\.\s*\d+(\.\d+)?\s*\)', '', text)
     text = '\n'.join(line for line in text.split('\n') if len(line.split()) > 1 or len(line.strip()) < 3)
     text = re.sub(r'\s+', ' ', text).strip()
     
