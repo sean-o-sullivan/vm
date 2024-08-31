@@ -1,8 +1,6 @@
 import re
 
-#I still do need a far more robust approach to finding these stupid tables, otherwise gutenberg is very much unusable.......
-#if we select the first stuf ---- then recognise column indicators ..... ||||| \\\\ ---- , then we can use those as continuations, and then the end must terminate with the same sequence as the start
-def find_true_end(text, initial_end_pos, lookahead_range=500):
+def find_true_end(text, initial_end_pos, lookahead_range=1000):
     current_end_pos = initial_end_pos
 
     while True:
@@ -60,10 +58,6 @@ Some more text in the table
 Another section of the table
 ---------------------------
 TEXT AFTER
-
-
-
-
 
 TABLE 1.--PROGRESS AND METHODS OF EXCAVATION IN GOOD GROUND. THIRTY-THIRD STREET. ============================================================ 1 2 3 -----------------------------+--------+--------------------+ Type of excavation. Tunnels. Worked from: -----------------------------+--------+--------------------+ Full-sized single tunnel B 1st Ave. shaft. Full-sized single tunnel A 1st Ave. shaft. Full-sized twin tunnel A and B 1st Ave. shaft. Full-sized twin tunnel A and B Intermediate shaft. (West of shaft.) Full-sized twin tunnel A and B Intermediate shaft. (East of shaft.) Full-sized twin tunnel A and B Intermediate shaft. (East of shaft.) Exploration drift A and B Intermediate shaft. (West of shaft.) Twin tunnel. Enlargement A and B West shaft. of exploration drift (East of shaft.) =============================+========+===================== ====================================================================== 4 5 6 7 ----------------------------------+--------+------------+------------+ Length Average DATES. Time tunnel advance ---------------------------------- elapsed, excavated, per day, in in in From To days. linear feet. linear feet. ----------------------------------+--------+------------+------------+ Feb. 28, 1906. May 12, 1906. 74 346 4.7 Feb. 28, 1906. Apr. 30, 1906. 62 255 4.1 Aug. 23, 1906. Jan. 5, 1907. 136 789 5.8 Apr. 4, 1906. Oct. 31, 1906. 210 730 3.5 Apr. 4, 1906. Oct. 31, 1906. 210 783 3.7 Nov. 1, 1906. Dec. 26, 1906. 56 311 5.5 Mar. 1, 1907. July 23, 1907. 145 947 6.5 Sept. 6, 1907. Dec. 4, 1907. 89 603 6.8 ===============+==================+========+============+============= ===================================================== 8 ----------------------------------------------------- Methods and conditions. ----------------------------------------------------- Top heading and bench. Muck loaded by hand. "" "" "" "" "" "" "" "" Top full-width heading and bench. Muck loaded by steam shovel. Working exclusively on this heading. Top center heading and bench. Muck loaded by steam shovel. Working alternately in headings east and west of the shaft. Top center heading and bench. Muck loaded by steam shovel. Working alternately in headings east and west of the shaft. Top full-width heading and bench. Muck loaded by steam shovel working exclusively on this heading. Exploration drift about 9 ft. by 12 ft. Mucking by hand. "" "" "" "" "" "" "" "" Top full-width heading and bench. Muck loaded by steam shovel working exclusively on this heading. =============================+========+===================== ====================================================
 
