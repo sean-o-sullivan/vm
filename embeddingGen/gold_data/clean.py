@@ -10,8 +10,8 @@ def clean_text(text):
     text = soup.get_text()
     text = re.sub(r'\((?:\w+,?\s+(?:et al\.)?,?\s+)?(?:19|20)\d{2}[a-z]?(?::\d+(?:-\d+)?)?(?:\s+and\s+(?:\w+,?\s+(?:et al\.)?,?\s+)?(?:19|20)\d{2}[a-z]?(?::\d+(?:-\d+)?)?)*\)', '', text)
     text = re.sub(r'\[.*?\]', '', text)
+    text = re.sub(r'\{.*?\}', '', text)
     text = re.sub(r'\*+', '', text)
-    text = re.sub(r'[={}]', '', text)
     text = re.sub(r'(?m)^\s*[\|+].*[\|+]\s*$', '', text)
     text = re.sub(r'(?m)^\s*[-+]+\s*$', '', text)
     text = re.sub(r'(?m)^\s*[a-zA-Z0-9]+\s*[-+*/^()]+.*$', '', text)
@@ -43,10 +43,15 @@ def clean_text(text):
     text = re.sub(r'([!?.]){2,}', r'\1', text)
     text = re.sub(r'\s+([,.!?:;])', r'\1', text)
     text = re.sub(r'([,.!?:;])\s+', r'\1 ', text)
+    text = re.sub(r'\(\s*\)', '', text)  #  empty parentheses
+    text = re.sub(r'\(\s*[a-z]\s*\)', '', text)  #  :(a), :(b), etc.
     text = '\n'.join(line for line in text.split('\n') if len(line.split()) > 1 or len(line.strip()) < 3)
     text = re.sub(r'\s+', ' ', text).strip()
     
     return text
+
+
+
 
 def process_and_compare(gutenberg_filename, bawe_filename):
     
@@ -60,10 +65,8 @@ def process_and_compare(gutenberg_filename, bawe_filename):
         cleaned_text = clean_text(original_text)
         print(f"Original Text:\n{original_text}\n")
         print(f"Cleaned Text:\n{cleaned_text}\n")
-        input("continue to continue")
         print("-" * 80)
-
-    print("\nBAWE Data Cleanings:\n")
+    print("\nBAWE Data Cleaning:\n")
     for i, row in bawe_df.iterrows():
         original_text = row['text']
         cleaned_text = clean_text(original_text)
