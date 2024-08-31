@@ -50,32 +50,33 @@ def clean_text(text):
     
     return text
 
-
-
-
 def process_and_compare(gutenberg_filename, bawe_filename):
     
     gutenberg_df = pd.read_csv(gutenberg_filename)
     bawe_df = pd.read_csv(bawe_filename)
-
-    
-    print("\nGutenberg Data Cleaning in progress ici:\n")
+    gutenberg_df['cleaned_text'] = gutenberg_df['text'].apply(clean_text)
+    bawe_df['cleaned_text'] = bawe_df['text'].apply(clean_text)
+    print("\nGutenberg Data Cleaning:\n")
     for i, row in gutenberg_df.iterrows():
         original_text = row['text']
-        cleaned_text = clean_text(original_text)
+        cleaned_text = row['cleaned_text']
         print(f"Original Text:\n{original_text}\n")
         print(f"Cleaned Text:\n{cleaned_text}\n")
         print("-" * 80)
     print("\nBAWE Data Cleaning:\n")
     for i, row in bawe_df.iterrows():
         original_text = row['text']
-        cleaned_text = clean_text(original_text)
+        cleaned_text = row['cleaned_text']
         print(f"Original Text:\n{original_text}\n")
         print(f"Cleaned Text:\n{cleaned_text}\n")
         print("-" * 80)
+
+    gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
+    bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned.csv', index=False)
 
 gutenberg_file = '4493_FromGutenberg.csv'
 bawe_file = 'BAWE_raw.csv'
 
 
 process_and_compare(gutenberg_file, bawe_file)
+
