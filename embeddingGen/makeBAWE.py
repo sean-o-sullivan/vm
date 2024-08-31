@@ -14,6 +14,8 @@ with open(output_csv, mode='w', newline='', encoding='utf-8') as csv_file:
             author_id = filename.split('.')[0][:-1]
             with open(os.path.join(directory_path, filename), 'r', encoding='utf-8') as file:
                 text = file.read().strip()
-            writer.writerow([author_id, text])
+            enclosed_text = f'"""{text}"""'            
+            writer.writerow([author_id, enclosed_text])
+
 
 print(f"CSV file '{output_csv}' has been created successfully.")
