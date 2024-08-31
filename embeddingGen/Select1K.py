@@ -3,10 +3,10 @@ import logging
 import random
 from tqdm import tqdm
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname=s - %(message)s')
 
-# new global delimiter?
-DELIMITER = '¤'
+# a simple, rare character as the delimiter, is it though?
+DELIMITER = '|'
 
 def generate_and_verify_csv(input_csv, output_file):
     df = pd.read_csv(input_csv)
@@ -23,6 +23,7 @@ def generate_and_verify_csv(input_csv, output_file):
     
     selected_authors = random.sample(df['author'].unique().tolist(), 1000)
     
+    # Prepare to write output CSV with the new delimiter
     with open(output_file, 'w') as f:
         f.write(f"author{DELIMITER}book{DELIMITER}sample_id{DELIMITER}processed_sample\n")
         
@@ -47,7 +48,6 @@ def generate_and_verify_csv(input_csv, output_file):
 
 def verify_csv(output_file):
     try:
-        # Load the generated CSV using the custom delimiter
         df = pd.read_csv(output_file, delimiter=DELIMITER)
         print(f"CSV successfully loaded with {len(df)} rows and the following columns: {df.columns.tolist()}")
     except Exception as e:
@@ -55,5 +55,5 @@ def verify_csv(output_file):
 
 if __name__ == "__main__":
     input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
-    output_file = 'output_raw_texts_with_delimiters.csv'
+    output_file = 'output_raw_texts_with_pipe_delimiter.csv'
     generate_and_verify_csv(input_csv, output_file)
