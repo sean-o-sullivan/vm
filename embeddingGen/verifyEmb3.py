@@ -1,5 +1,6 @@
 import pandas as pd
 import logging
+import tqdm
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
