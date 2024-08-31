@@ -1,7 +1,8 @@
-import stanza  
-import re  
-import math  
-import numpy as np  
+import stanza  # Stanford NLP library for tokenization and NLP tasks
+import re  # Regular expressions for text processing
+import math  # Mathematical functions, e.g., for Honoré's Statistic calculation
+import logging
+import numpy as np  # Importing numpy for variance calculation
 import textstat
 from readability import getmeasures
 from collections import Counter, defaultdict
@@ -484,8 +485,17 @@ def yules_k_characteristic(doc):
     print(f"DEBUG: Yule's K = {yules_k}")
     return yules_k
 
+
+
 def honores_r(doc):
-        
+    """
+    Computes Honoré's R statistic for lexical richness for the given processed document.
+    Parameters:
+        doc: The processed document from the Stanza pipeline.
+    Returns:
+        float: The Honoré's R value, or 0.0 if the calculation is not possible.
+    """
+    # Extract words from the processed document
     words = [word.text.lower() for sentence in doc.sentences for word in sentence.words]
     
     
@@ -497,14 +507,31 @@ def honores_r(doc):
     
     hapax_legomena = sum(1 for word in set(words) if words.count(word) == 1)
     
+    logging.debug(f"Total words: {total_words}, Unique words: {unique_words}, Hapax legomena: {hapax_legomena}")
     
     if total_words == 0 or unique_words == 0:
+        logging.warning("Honore's R calculation failed: total_words or unique_words is 0")
         return 0.0
     
+    if hapax_legomena == unique_words:
+        logging.warning("Honore's R calculation failed: all unique words are hapax legomena")
+        return 0.0
     
-    honores_r_value = 100 * (math.log(total_words)) / (1 - (hapax_legomena / unique_words))
-    
-    return honores_r_value
+    try:
+        # Calculate Honoré's R
+        honores_r_value = 100 * (math.log(total_words)) / (1 - (hapax_legomena / unique_words))
+        
+        if math.isnan(honores_r_value) or math.isinf(honores_r_value):
+            logging.warning(f"Honore's R calculation resulted in an invalid value: {honores_r_value}")
+            return 0.0
+        
+        return honores_r_value
+    except Exception as e:
+        logging.error(f"Error in Honore's R calculation: {str(e)}")
+        return 0.0
+
+
+
 
 def renyis_entropy(doc, alpha=2):
         
