@@ -1,0 +1,31 @@
+Statistic,Count
+html_tags_removed,51554
+equations_with_parentheses_removed,22665
+number_sequences_removed,875
+quotes_normalized,46349
+footnote_markers_removed,92867
+spaces_normalized,444887
+extra_spaces_removed,43932
+citations_removed,9583
+fractions_normalized,9882
+repeated_punctuation_removed,3928
+unicode_characters_removed,3196
+square_brackets_removed,5394
+apostrophes_normalized,109
+empty_parentheses_removed,570
+single_letter_parentheses_removed,246
+FORMULA_removed,7075
+asterisks_removed,658
+special_characters_removed,754
+bullet_points_removed,205
+ c) _removed,18
+ e) _removed,4
+ d) _removed,9
+urls_removed,5
+email_addresses_removed,7
+trademark_symbols_removed,118
+ b) _removed,26
+curly_braces_removed,98
+dashes_normalized,66
+figure_references_removed,4
+( _removed,3
