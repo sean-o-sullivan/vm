@@ -55,7 +55,7 @@ def remove_table_from_text(text, stats):
 
     return cleaned_text.strip(), removed_tables
 
-def clean_text(text):
+def clean_text(text,useTable):
     stats = Counter()
     removed_tables = []
     soup = BeautifulSoup(text, 'html.parser')
@@ -65,8 +65,14 @@ def clean_text(text):
     stats['citations_removed'] += n
     text, n = re.subn(r'\[.*?\]', '', text)
     stats['square_brackets_removed'] += n
-    text, tables = remove_table_from_text(text, stats)
-    removed_tables.extend(tables)
+
+    if (useTable==True):
+        # Table removal step
+        text, tables = remove_table_from_text(text, stats)
+        removed_tables.extend(tables)
+    else: 
+        continue
+
     text, n = re.subn(r'\{.*?\}', '', text)
     stats['curly_braces_removed'] += n
     text, n = re.subn(r'\*+', '', text)
@@ -81,11 +87,8 @@ def clean_text(text):
     stats['equations_removed'] += n
     text, n = re.subn(r'\b[a-zA-Z0-9]+\s*[\+\-\*/\^]*\s*\(.*?\)\s*[\+\-\*/\^]*\s*[a-zA-Z0-9]*\b', '', text)
     stats['equations_with_parentheses_removed'] += n
-    
     text, n = re.subn(r'(?m)^\s*[\(\)\[\]\{\}a-zA-Z0-9]+\s*[-+*/^()]+\s*\(.*?\)\s*.*$', '', text)
     stats['equations_with_parentheses_removed'] += n
-
-    # Remove special characters commonly used in equations
     text, n = re.subn(r'[±∓×÷∙∘·°∂∇∆∑∏∫√∛∜∝∞≈≠≡≤≥≪≫⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋∈∉∋∌∍∎∏∐∑−]', '', text)
     stats['special_characters_removed'] += n
     text, n = re.subn(r'\b(\d+(?:\s+\d+)+)\b', '', text)
@@ -124,18 +127,12 @@ def clean_text(text):
     text = ''.join(char for char in text if unicodedata.category(char)[0] != 'So')
     text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('ASCII')
     stats['unicode_characters_removed'] = original_length - len(text)
-
-
-#these silly words are everywhere in BAWE, bane of my existence in V1
-    words_to_remove = ["\'Introduction", "\'Summary", "\'Abstract", "\'Objective" , "\'Executive Summary", "\'Aim:", "'\Referral informationR", "\'PART: EVALUATION", "\' Introduction", "\'SITUATION", "\'AIM", "\'INTRODUCTION", "\'Project PlanningI", "\') Selfish Genes and Group Selection", "\'Part - A", "\'a)", " b) ", " c) ", " d) ", " e) ", "(see figure ) ", "(Figure ) " , "( "]
-
-    # Remove specified words/phrases from the text with exact case-sensitive matching
+    words_to_remove = ["\'Introduction", "\'Summary", "\'Abstract", "\'Objective" , "\'Executive Summary", "\'Aim:", "'\Referral informationR", "\'PART: EVALUATION", "\' Introduction", "\'SITUATION", "\'AIM", "\'INTRODUCTION", "\'Project PlanningI", "\') Selfish Genes and Group Selection", "\'Part - A", "\'a)", " b) ", " c) ", " d) ", " e) ", "(see figure ) ", "(Figure ) " , "( ", "FORMULA"]
     for word in words_to_remove:
         text, n = re.subn(r'\b' + re.escape(word) + r'\b', '', text)
         stats[f'{word}_removed'] = n
 
     
-    # Remove repeated punctuation
     text, n = re.subn(r'([!?.]){2,}', r'\1', text)
     stats['repeated_punctuation_removed'] += n
     text, n = re.subn(r'\s+([,.!?:;])', r'\1', text)
@@ -146,8 +143,6 @@ def clean_text(text):
     stats['empty_parentheses_removed'] += n
     text, n = re.subn(r'\(\s*[a-z]\s*\)', '', text)
     stats['single_letter_parentheses_removed'] += n
-
-    
     text, n = re.subn(r'\(\s*(Pl\.\s*\d+\s*,)?\s*Fig\.\s*\d+(\.\d+)?\s*\)', '', text)
     stats['figure_references_removed'] += n
     original_lines = text.split('\n')
@@ -173,7 +168,7 @@ def process_and_compare(gutenberg_filename, bawe_filename):
     all_tables = []
     print("\nCleaning Gutenberg Data:\n")
     for i in tqdm(range(len(gutenberg_df)), desc="Gutenberg"):
-        cleaned_text, stats, removed_tables = clean_text(gutenberg_df.at[i, 'text'])
+        cleaned_text, stats, removed_tables = clean_text(gutenberg_df.at[i, 'text'], useTable=True)
         gutenberg_df.at[i, 'cleaned_text'] = cleaned_text
         gutenberg_stats += stats
         if removed_tables:
@@ -192,7 +187,7 @@ def process_and_compare(gutenberg_filename, bawe_filename):
     
     print("\nCleaning this BAWE Data:\n")
     for i in tqdm(range(len(bawe_df)), desc="BAWE"):
-        cleaned_text, stats, removed_tables = clean_text(bawe_df.at[i, 'text'])
+        cleaned_text, stats, removed_tables = clean_text(bawe_df.at[i, 'text'], useTable=False)
         bawe_df.at[i, 'cleaned_text'] = cleaned_text
         bawe_stats += stats
 
