@@ -1,16 +1,10 @@
-import pandas as pd
-import re
-from bs4 import BeautifulSoup
-import unicodedata
-from tqdm import tqdm
-from collections import Counter
 
 def find_true_end(text, initial_end_pos, lookahead_range=1000):
     current_end_pos = initial_end_pos
 
     while True:
         lookahead_text = text[current_end_pos:current_end_pos + lookahead_range]
-        next_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', lookahead_text)
+        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
 
         if next_end_match:
             current_end_pos += next_end_match.end()
@@ -22,6 +16,7 @@ def find_true_end(text, initial_end_pos, lookahead_range=1000):
 def remove_table_from_text(text, stats):
     cleaned_text = ""
     position = 0
+    removed_tables = []
 
     while True:
         start_match = re.search(r'\b[A-Z]{3,}\b', text[position:])
@@ -35,7 +30,7 @@ def remove_table_from_text(text, stats):
 
         lookahead_range = 500
         lookahead_text = text[start_pos:start_pos + lookahead_range]
-        table_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', lookahead_text)
+        table_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
 
         if not table_end_match:
             position = start_pos + len(start_match.group(0))
@@ -45,13 +40,15 @@ def remove_table_from_text(text, stats):
         true_end_pos = find_true_end(text, initial_end_pos)
         table_content = text[start_pos:true_end_pos]
         
+        removed_tables.append(table_content)
         stats['tables_removed'] += 1
         position = true_end_pos
 
-    return cleaned_text.strip()
-#many a character for the internet
+    return cleaned_text.strip(), removed_tables
+
 def clean_text(text):
     stats = Counter()
+    removed_tables = []
     soup = BeautifulSoup(text, 'html.parser')
     stats['html_tags_removed'] = len(list(soup.find_all()))
     text = soup.get_text()
@@ -59,7 +56,12 @@ def clean_text(text):
     stats['citations_removed'] += n
     text, n = re.subn(r'\[.*?\]', '', text)
     stats['square_brackets_removed'] += n
-    text = remove_table_from_text(text, stats)
+    
+    # Table removal step
+    text, tables = remove_table_from_text(text, stats)
+    removed_tables.extend(tables)
+    
+    # Remove curly braces and content within them
     text, n = re.subn(r'\{.*?\}', '', text)
     stats['curly_braces_removed'] += n
     text, n = re.subn(r'\*+', '', text)
@@ -130,20 +132,25 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text).strip()
     stats['extra_spaces_removed'] = original_length - len(text)
     
-    return text, stats
+    return text, stats, removed_tables
+
+    
+
 
 def process_corpus(corpus):
     total_stats = Counter()
     cleaned_corpus = []
+    all_removed_tables = []
 
     for text in tqdm(corpus, desc="Processing texts"):
-        cleaned_text, stats = clean_text(text)
+        cleaned_text, stats, removed_tables = clean_text(text)
         total_stats += stats
         cleaned_corpus.append(cleaned_text)
+        all_removed_tables.extend(removed_tables)
 
-    return cleaned_corpus, total_stats
+    return cleaned_corpus, total_stats, all_removed_tables
 
-
+# Sample usage
 sample_text = """
 <html>
 <body>
