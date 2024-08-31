@@ -120,7 +120,7 @@ def clean_text(text):
 
 
 #these silly words are everywhere in BAWE, bane of my existence in V1
-    words_to_remove = ["\'Introduction", "\'Summary", "\'Abstract", "\'Objective" , "\'Executive Summary", "\'Aim:", "'\Referral informationR", "\'PART: EVALUATION", "\' Introduction", "\'SITUATION", "\'AIM" ]
+    words_to_remove = ["\'Introduction", "\'Summary", "\'Abstract", "\'Objective" , "\'Executive Summary", "\'Aim:", "'\Referral informationR", "\'PART: EVALUATION", "\' Introduction", "\'SITUATION", "\'AIM", "\'INTRODUCTION", "\'Project PlanningI", "\') Selfish Genes and Group Selection", "\'Part - A", "\'a)", " b) ", " c) ", " d) ", " e) ", "(see figure ) ", "(Figure ) " , "( "]
 
     # Remove specified words/phrases from the text with exact case-sensitive matching
     for word in words_to_remove:
