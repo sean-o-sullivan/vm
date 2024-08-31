@@ -13,10 +13,14 @@ def process_jsonl_files(input_jsonl, output_jsonl, output_csv):
         for line in tqdm(f, desc="Processing input JSONL"):
             entry = json.loads(line)
             custom_id = entry['custom_id']
-            input_data[custom_id] = {
-                'text': ' '.join(entry['body']['messages'][0]['content'].split()),  # Remove all newlines and extra spaces
-                'author': custom_id.split('-')[0].replace('__', ' ').replace('_', ' ')
-            }
+            user_message = next((msg['content'] for msg in entry['body']['messages'] if msg['role'] == 'user'), None)
+            if user_message:
+                input_data[custom_id] = {
+                    'text': ' '.join(user_message.split()),  # Remove all newlines and extra spaces
+                    'author': custom_id.split('-')[0].replace('__', ' ').replace('_', ' ')
+                }
+            else:
+                logging.warning(f"No user message found for custom_id: {custom_id}")
 
     
     logging.info(f"Processing output JSONL file: {output_jsonl}")
