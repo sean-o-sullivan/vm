@@ -2,8 +2,7 @@ import re
 
 #I still do need a far more robust approach to finding these stupid tables, otherwise gutenberg is very much unusable.......
 #if we select the first stuf ---- then recognise column indicators ..... ||||| \\\\ ---- , then we can use those as continuations, and then the end must terminate with the same sequence as the start
-
-def find_true_end(text, initial_end_pos, lookahead_range=750):
+def find_true_end(text, initial_end_pos, lookahead_range=500):
     current_end_pos = initial_end_pos
 
     while True:
@@ -72,7 +71,9 @@ Text after table.
 
     TABLE 2.--General characteristics of the continental rise northwest Africa Sector Values measured from Profiles E-11 to E-21 ==================================================================== Depth Segment Upper edge Lower edge Gradient Width ==================================================================== Upper continental rise 1 1200 200 1500 200 1:90 30 30 10? 2 1500 200 1600 200 1:200 100 30 15? 3 1600 200 1800 100 1:100 50 25 15? Lower continental rise 1 1800 100 2000 100 1:400 200 75 50 2 2000 100 2000 100 1:1500 500 150 50 3 2000 100 2700 100 1:500 200 200 50 Abyssal plain 2700 100 3000 75 1:1250 250 200 50 --------------------------------------------------------------------
 
-as the following table indicates: DEATH RATE OF JAPANESE IN CALIFORNIA. ======================== Year. Number. Percentage of Death per 1000. ----- ------- ---------- 1910 440 10.64% 1911 472 ..... 1912 524 ..... 1913 613 ..... 1914 628 ..... 1915 663 ..... 1916 739 ..... 1917 910 ..... 1918 1150 ..... 1919 1360 20.00% ======================== The rate of death per one thousand population increased twice during the past ten years.
+as the following table indicates: DEATH RATE OF JAPANESE IN CALIFORNIA. ======================== Year. Number. Percentage of Death per 1000. ----- ------- ---------- 1910 440 10.64% 1911 472 ..... 1912 524 ..... 1913 613 ..... 1914 628 ..... 1915 663 ..... 1916 739 ..... 1917 910 ..... 1918 1150 ..... 1919 1360 20.00% ======================== The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years. The rate of death per one thousand population increased twice during the past ten years.
+
+
 
 JAPANESE POPULATION IN THE UNITED STATES AND CALIFORNIA. ===================================================================== Census. Japanese in Decennial Rate of Rate of Percentage of Continental Increase of Decennial Decennial Japanese in United Japanese in Increase. Increase of California to States. Continental Japanese in entire Japanese United California. population of States. United States. ------------------- ----------- --------- ----------- --------------- 1880 148 ...... ....... ...... 58.1% 1890 2,039 1,891 1,277.7% 1234.0% 56.2% 1900 24,326 22,287 1,093.0% 785.0% 41.7% 1910 72,157 47,831 196.6% 307.3% 57.3% 1920 119,207 47,050 65.2% 69.7% 58.8% =====================================================================
 
