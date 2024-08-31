@@ -3,14 +3,14 @@ import re
 #I still do need a far more robust approach to finding these stupid tables, otherwise gutenberg is very much unusable.......
 #if we select the first stuf ---- then recognise column indicators ..... ||||| \\\\ ---- , then we can use those as continuations, and then the end must terminate with the same sequence as the start
 
-def find_true_end(text, initial_end_pos, lookahead_range=500):
+def find_true_end(text, initial_end_pos, lookahead_range=750):
     current_end_pos = initial_end_pos
 
     while True:
         
         lookahead_text = text[current_end_pos:current_end_pos + lookahead_range]
         # Search for another "end" sequence within the lookahead range
-        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,})\n|(-{10,})\n', lookahead_text)
+        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{3,})', lookahead_text)
 
         if next_end_match:
             current_end_pos += next_end_match.end()
@@ -40,7 +40,7 @@ def remove_table_from_text(text):
     # Step 3: Find the true end of the table by looking ahead 500 characters
     true_end_pos = find_true_end(text, initial_end_pos)
 
-    # Optionally, find the start of the next normal sentence after the table
+    # Optionally, we can also find the start of the next normal sentence after the table
     normal_text_start = re.search(r'[A-Za-z]', text[true_end_pos:])
     
     if normal_text_start:
