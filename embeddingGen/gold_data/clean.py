@@ -60,10 +60,10 @@ def process_and_compare(gutenberg_filename, bawe_filename):
         cleaned_text = clean_text(original_text)
         print(f"Original Text:\n{original_text}\n")
         print(f"Cleaned Text:\n{cleaned_text}\n")
+        input("continue to continue")
         print("-" * 80)
 
-    
-    print("\nBAWE Data Cleanin in the works:\n")
+    print("\nBAWE Data Cleanings:\n")
     for i, row in bawe_df.iterrows():
         original_text = row['text']
         cleaned_text = clean_text(original_text)
