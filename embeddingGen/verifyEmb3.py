@@ -15,7 +15,7 @@ def process_entry(row):
     print(f"Processing sample_id: {sample_id}")
     print(f"Author: {author}")
     print(f"Book: {book_name}")
-    print(f"Processed sample (first 100 chars): {processed_sample[:100]}")
+    print(f"Processed sample (first 100 chars): {processed_sample[:10000]}")
     
     input("Press Enter to continue...")  # Wait for my user input 
 
