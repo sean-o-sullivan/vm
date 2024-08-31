@@ -7,7 +7,7 @@ def find_true_end(text, initial_end_pos, lookahead_range=1000):
         
         lookahead_text = text[current_end_pos:current_end_pos + lookahead_range]
         # Search for another "end" sequence within the lookahead range
-        next_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{10,})', lookahead_text)
+        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
 
         if next_end_match:
             current_end_pos += next_end_match.end()
@@ -21,9 +21,9 @@ def remove_table_from_text(text):
     position = 0
 
     while True:
-        # Step 1: I need to find the position of the next ALL CAPS word, like TABLE.X:
-        start_match = re.search(r'\b[A-Z\s.,\'\-]{5,}\b', text[position:])
-        
+        # Step 1: Find the position of the next strict ALL CAPS word
+        start_match = re.search(r'\b[A-Z]{3,}\b', text[position:])
+
         if not start_match:
             # No ALL CAPS word found, append remaining text and exit loop
             cleaned_text += text[position:]
@@ -35,8 +35,8 @@ def remove_table_from_text(text):
         cleaned_text += text[position:start_pos].strip() + "\n"
 
         # Step 2: Find the first occurrence of sequences of `=`, `-`, `.` or dashes after the ALL CAPS word
-        first_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{10,})', text[start_pos:])
-        
+        first_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', text[start_pos:])
+
         if not first_end_match:
             # No end sequence found after this ALL CAPS word, continue searching
             position = start_pos + len(start_match.group(0))
@@ -44,19 +44,18 @@ def remove_table_from_text(text):
         
         initial_end_pos = start_pos + first_end_match.end()
 
-        # Step 5: Find the true end of the table by looking ahead 1000 characters
+        # Step 3: Find the true end of the table by looking ahead 1000 characters
         true_end_pos = find_true_end(text, initial_end_pos)
         table_content = text[start_pos:true_end_pos]
-        print(f"\n\n\nRemoving table from position {start_pos} to {true_end_pos}")
+        print(f"Removing table from position {start_pos} to {true_end_pos}")
         print("Table content:")
         print(table_content)
-        print("----\n\n\n")
+        print("----")
 
         # Update the position to continue searching after the end of the removed table
         position = true_end_pos
 
     return cleaned_text.strip()
-
 
 # Example usage with a test case
 text_input = """
