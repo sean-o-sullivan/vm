@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def main():
     input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
-    output_file = 'output_raw_texts.csv'
+    output_file = 'output_raw_texts_with_delimiters.csv'
     df = pd.read_csv(input_csv)
     
     if df.empty:
@@ -36,14 +36,12 @@ def main():
             else:
                 selected_texts = author_df
             
-            for _, row in selected_texts.iterrows(): #my silly delimiter
-                processed_sample = row['processed_sample'].replace("#/#\\#|||#/#\\#|||#/#\\#", "")
-                
-                
-                line = f"{row['author']},{row['book']},{row['sample_id']},{processed_sample}\n"
+            for _, row in selected_texts.iterrows():
+                processed_sample = row['processed_sample']  # Keep my delimiter
+                line = f"{row['author']},{row['book']},{row['sample_id']},\"{processed_sample}\"\n"
                 f.write(line)
 
-    logging.info(f"Processing completed. Raw texts saved to {output_file}")
+    logging.info(f"Processing completed. Raw texts with delimiters saved to {output_file}")
 
 if __name__ == "__main__":
     main()
