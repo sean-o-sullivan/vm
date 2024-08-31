@@ -28,7 +28,6 @@ def remove_table_from_text(text):
             # No ALL CAPS word found, append remaining text and exit loop
             cleaned_text += text[position:]
             break
-
         start_pos = position + start_match.start()
         print(f"Start position of table: {start_pos}")
 
@@ -48,10 +47,12 @@ def remove_table_from_text(text):
         # Step 3: Find the true end of the table by looking ahead 1000 characters
         true_end_pos = find_true_end(text, initial_end_pos)
         table_content = text[start_pos:true_end_pos]
-        print(f"Removing table from position {start_pos} to {true_end_pos}")
+        print(f"\n\n\nRemoving table from position {start_pos} to {true_end_pos}")
         print("Table content:")
         print(table_content)
-        print("----")
+        print("----\n\n\n")
+
+        # Update the position to continue searching after the end of the removed table
         position = true_end_pos
 
     return cleaned_text.strip()
