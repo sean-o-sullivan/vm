@@ -42,7 +42,7 @@ def process_jsonl_files(input_jsonl, output_jsonl, output_csv):
     logging.info(f"Processing complete. results are written to {output_csv}")
 
 if __name__ == "__main__":
-    input_jsonl = 'input_samples.jsonl'
-    output_jsonl = 'model_decisions.jsonl'
-    output_csv = 'selected_samples.csv'
+    input_jsonl = 'batch_dataset_classification_5K.jsonl'
+    output_jsonl = 'batch_dataset_classification_output_5K.jsonl'
+    output_csv = 'selected_samples_FromGPTRound2.csv'
     process_jsonl_files(input_jsonl, output_jsonl, output_csv)

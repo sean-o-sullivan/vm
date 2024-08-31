@@ -10,6 +10,7 @@ def process_entry(row, embedding_columns):
     book_name = row['book']
     sample_id = row['sample_id']
     processed_sample = row['processed_sample']
+#    input(f"the processed sample is very much: {processed_sample}")
     
     # Remove the custom delimiters from the processed_sample
     processed_sample = processed_sample.replace("#/#\\#|||#/#\\#|||#/#\\#", "")
@@ -35,7 +36,7 @@ def process_entry(row, embedding_columns):
 
 def main():
     input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
-    output_file = 'output_embeddings.csv'
+    output_file = 'output_embeddings_10KSample.csv'
 
     df = pd.read_csv(input_csv)
     

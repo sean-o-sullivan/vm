@@ -19,7 +19,7 @@ def process_jsonl(input_file, output_file):
             custom_id = data['custom_id']
             response = data['response']['body']['choices'][0]['message']['content']
             
-            # Check if the response is 'YES'
+            # if the response is 'YES'
             if response.strip().upper() == 'YES':
                 author, book = custom_id.rsplit('-', 1)  # Split from the right side
                 suitable_books.append([author, book])
@@ -37,6 +37,6 @@ def process_jsonl(input_file, output_file):
     logging.info("Processing completed.")
 
 if __name__ == "__main__":
-    input_file = 'batch_dataset_classification_output.jsonl'
+    input_file = 'batch_dataset_classification_output_5.jsonl'
     output_file = 'suitable_books_for_authorship_verification.csv'
     process_jsonl(input_file, output_file)
