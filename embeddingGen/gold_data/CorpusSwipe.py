@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 import unicodedata
 from tqdm import tqdm
 from collections import Counter
+import csv
+
 
 
 def find_true_end(text, initial_end_pos, lookahead_range=1000):
