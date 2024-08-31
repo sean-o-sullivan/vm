@@ -3,13 +3,14 @@ import re
 from bs4 import BeautifulSoup
 import unicodedata
 from tqdm import tqdm
+
 #a culmination of my previous efforts
 def find_true_end(text, initial_end_pos, lookahead_range=1000):
     current_end_pos = initial_end_pos
 
     while True:
         lookahead_text = text[current_end_pos:current_end_pos + lookahead_range]
-        next_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', lookahead_text)
+        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
 
         if next_end_match:
             current_end_pos += next_end_match.end()
@@ -23,22 +24,29 @@ def remove_table_from_text(text):
     position = 0
 
     while True:
+        # Step 1: Find the position of the next ALL CAPS word
         start_match = re.search(r'\b[A-Z]{3,}\b', text[position:])
 
         if not start_match:
+            # No ALL CAPS word found, append remaining text and exit loop
             cleaned_text += text[position:]
             break
 
         start_pos = position + start_match.start()
         cleaned_text += text[position:start_pos].strip() + "\n"
 
-        first_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', text[start_pos:])
-        
-        if not first_end_match:
+        # Step 2: Check if there is a table end within the next 500 characters
+        lookahead_range = 500
+        lookahead_text = text[start_pos:start_pos + lookahead_range]
+        table_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
+
+        if not table_end_match:
+            # No table end found within 500 characters, move on
             position = start_pos + len(start_match.group(0))
             continue
         
-        initial_end_pos = start_pos + first_end_match.end()
+        # Step 3: If a table end is found, process as usual
+        initial_end_pos = start_pos + table_end_match.end()
         true_end_pos = find_true_end(text, initial_end_pos)
         table_content = text[start_pos:true_end_pos]
         print(f"Removing table from position {start_pos} to {true_end_pos}")
@@ -46,9 +54,13 @@ def remove_table_from_text(text):
         print(table_content)
         print("----")
 
+        # Update the position to continue searching after the end of the removed table
         position = true_end_pos
 
     return cleaned_text.strip()
+
+
+
 
 def clean_text(text):
     
