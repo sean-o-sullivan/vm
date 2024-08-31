@@ -3,29 +3,35 @@ import re
 #I still do need a far more robust approach to finding these stupid tables, otherwise gutenberg is very much unusable.......
 #if we select the first stuf ---- then recognise column indicators ..... ||||| \\\\ ---- , then we can use those as continuations, and then the end must terminate with the same sequence as the start
 
-table_boundary_pattern = re.compile(
-    r'(?sm)'  
-    r'(?:(?:^[A-Z\s.,\'\-]+$\n)?'  
-    r'^(?:[=\-+|_]{2,}.*$\n)'  
-    r'(?:^.*(?:\||\+|\-|=).*$\n)+'  
-    r'^(?:[=\-+|_]{2,}.*$\n)?)',  
-    re.MULTILINE
-)
-
-
-space_aligned_table_pattern = re.compile(
-    r'(?sm)'  
-    r'(?:(?:^[A-Z\s.,\'\-]+$\n)?'  
-    r'^(?:[\s\d\w]+(?:\s{2,}[\s\d\w]+)+$\n)+'  
-    r'(?:^[=\-+|_]{2,}.*$\n)?)',  
-    re.MULTILINE
-)
-
 def remove_tables(text):
     
-    text = table_boundary_pattern.sub('', text)
-    text = space_aligned_table_pattern.sub('', text)
+    start_pattern = re.compile(r'^[A-Z\s.,\'\-]+\n', re.MULTILINE)
     
+    end_pattern = re.compile(r'^(={3,}|\.{3,}|\-{3,}).*\n', re.MULTILINE)
+
+    def remove_table_section(match):
+        start_index = match.start()
+        
+        
+        end_match = end_pattern.search(text, start_index)
+        
+        if end_match:
+            
+            post_table_text_start = re.search(r'^[A-Za-z]', text[end_match.end():], re.MULTILINE)
+            
+            if post_table_text_start:
+                
+                return text[:start_index] + text[end_match.end() + post_table_text_start.start():]
+        
+        return text
+
+    
+    while True:
+        match = start_pattern.search(text)
+        if not match:
+            break
+        text = remove_table_section(match)
+
     
     text = re.sub(r'\n{3,}', '\n\n', text)
     
