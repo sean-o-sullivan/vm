@@ -5,7 +5,8 @@ from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-DELIMITER = "#/#\\#|||#/#\\#|||#/#\\#"
+# new global delimiter?
+DELIMITER = '¤'
 
 def generate_and_verify_csv(input_csv, output_file):
     df = pd.read_csv(input_csv)
@@ -35,7 +36,8 @@ def generate_and_verify_csv(input_csv, output_file):
                 selected_texts = author_df
             
             for _, row in selected_texts.iterrows():
-                processed_sample = f"{DELIMITER}{row['processed_sample']}{DELIMITER}"  # Enclose with delimiter
+                processed_sample = row['processed_sample']  # Keep the text as is
+                
                 line = f"{row['author']}{DELIMITER}{row['book']}{DELIMITER}{row['sample_id']}{DELIMITER}{processed_sample}\n"
                 f.write(line)
 
