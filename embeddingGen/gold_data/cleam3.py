@@ -7,7 +7,7 @@ def find_true_end(text, initial_end_pos, lookahead_range=1000):
         
         lookahead_text = text[current_end_pos:current_end_pos + lookahead_range]
         # Search for another "end" sequence within the lookahead range
-        next_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,}|-{10,})', lookahead_text)
+        next_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', lookahead_text)
 
         if next_end_match:
             current_end_pos += next_end_match.end()
@@ -17,22 +17,26 @@ def find_true_end(text, initial_end_pos, lookahead_range=1000):
     return current_end_pos
 
 def remove_table_from_text(text):
-    cleaned_text = text
+    cleaned_text = ""
     position = 0
 
     while True:
-        # Step 1: Find the position of the next ALL CAPS word, tables often start with all caps: TABLE.X:
-        start_match = re.search(r'\b[A-Z\s.,\'\-]{3,}\b', cleaned_text[position:])
+        # Step 1: I need to find the position of the next ALL CAPS word, like TABLE.X:
+        start_match = re.search(r'\b[A-Z\s.,\'\-]{3,}\b', text[position:])
         
         if not start_match:
-            # No ALL CAPS word found, exit loop
+            # No ALL CAPS word found, append remaining text and exit loop
+            cleaned_text += text[position:]
             break
 
         start_pos = position + start_match.start()
         print(f"start pos is: {start_pos}")
 
+        # Append the text before the current table
+        cleaned_text += text[position:start_pos].strip() + "\n"
+
         # Step 2: Find the first occurrence of sequences of `=`, `-`, `.` or dashes after the ALL CAPS word
-        first_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', cleaned_text[start_pos:])
+        first_end_match = re.search(r'([=]{5,}|[-]{5,}|[.]{5,}|-{5,})', text[start_pos:])
         
         if not first_end_match:
             # No end sequence found after this ALL CAPS word, continue searching
@@ -42,16 +46,14 @@ def remove_table_from_text(text):
         initial_end_pos = start_pos + first_end_match.end()
 
         # Step 3: Find the true end of the table by looking ahead 1000 characters
-        true_end_pos = find_true_end(cleaned_text, initial_end_pos)
+        true_end_pos = find_true_end(text, initial_end_pos)
 
-        # Step 4: Remove the table and update position
-        cleaned_text = cleaned_text[:start_pos].strip() + "\n" + cleaned_text[true_end_pos:].strip()
-        
-        # Continue searching after the end of the removed table
-        position = start_pos
+        # Update the position to continue searching after the end of the removed table
+        position = true_end_pos
+
+    return cleaned_text.strip()
 
 
-    return cleaned_text
 
 # Example usage with a test case
 text_input = """
