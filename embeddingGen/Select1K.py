@@ -1,59 +1,36 @@
 import pandas as pd
-import logging
 import random
-from tqdm import tqdm
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname=s - %(message)s')
+def main():
+    input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
+    output_csv = 'selected_samples.csv'
 
-# a simple, rare character as the delimiter, is it though?
-DELIMITER = '|'
-
-def generate_and_verify_csv(input_csv, output_file):
+    
     df = pd.read_csv(input_csv)
     
     if df.empty:
-        logging.error("No entries found in results.csv. Exiting.")
+        print("No entries found in the CSV. Exiting.")
         return
 
-    print(f"all of the CSV Headers: {df.columns.tolist()}")
-    print(f"Total entries: {len(df)}")
-    unique_authors = df['author'].nunique()
-    print(f"Unique authors in the dataset: {unique_authors}")
+    author_sample_counts = df['author'].value_counts()
+    eligible_authors = author_sample_counts[author_sample_counts >= 5].index.tolist()
     
-    
-    selected_authors = random.sample(df['author'].unique().tolist(), 1000)
-    
-    # Prepare to write output CSV with the new delimiter
-    with open(output_file, 'w') as f:
-        f.write(f"author{DELIMITER}book{DELIMITER}sample_id{DELIMITER}processed_sample\n")
+    print(f"Total number of eligible authors with at least 5 samples: {len(eligible_authors)}")
+    selected_authors = random.sample(eligible_authors, min(1000, len(eligible_authors)))
+    print(f"Number of selected authors: {len(selected_authors)}")
+    selected_rows = []
+
+    for author in selected_authors:
         
-        
-        for author in tqdm(selected_authors, desc="Processing authors"):
-            author_df = df[df['author'] == author]
-            
-            if len(author_df) >= 5:
-                selected_texts = author_df.sample(5)
-            else:
-                selected_texts = author_df
-            
-            for _, row in selected_texts.iterrows():
-                processed_sample = row['processed_sample']  # Keep the text as is
-                
-                line = f"{row['author']}{DELIMITER}{row['book']}{DELIMITER}{row['sample_id']}{DELIMITER}{processed_sample}\n"
-                f.write(line)
+        author_samples = df[df['author'] == author]
+        selected_samples = author_samples.sample(n=5)
+        selected_rows.append(selected_samples)
 
-    logging.info(f"CSV generation completed. File saved as {output_file}")
+    
+    result_df = pd.concat(selected_rows, ignore_index=True)
+    result_df.to_csv(output_csv, index=False, quoting=1)
 
-    verify_csv(output_file)
-
-def verify_csv(output_file):
-    try:
-        df = pd.read_csv(output_file, delimiter=DELIMITER)
-        print(f"CSV successfully loaded with {len(df)} rows and the following columns: {df.columns.tolist()}")
-    except Exception as e:
-        logging.error(f"Error loading CSV: {str(e)}")
+    print(f"Selected samples saved to {output_csv}")
 
 if __name__ == "__main__":
-    input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
-    output_file = 'output_raw_texts_with_pipe_delimiter.csv'
-    generate_and_verify_csv(input_csv, output_file)
+    main()
