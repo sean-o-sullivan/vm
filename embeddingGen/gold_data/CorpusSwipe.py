@@ -117,6 +117,18 @@ def clean_text(text):
     text = ''.join(char for char in text if unicodedata.category(char)[0] != 'So')
     text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('ASCII')
     stats['unicode_characters_removed'] = original_length - len(text)
+
+
+#these silly words are everywhere in BAWE, bane of my existence in V1
+    words_to_remove = ["\'Introduction", "\'Summary", "\'Abstract", "\'Objective" , "\'Executive Summary", "\'Aim:", "'\Referral informationR", "\'PART: EVALUATION", "\' Introduction", "\'SITUATION", "\'AIM" ]
+
+    # Remove specified words/phrases from the text with exact case-sensitive matching
+    for word in words_to_remove:
+        text, n = re.subn(r'\b' + re.escape(word) + r'\b', '', text)
+        stats[f'{word}_removed'] = n
+
+    
+    # Remove repeated punctuation
     text, n = re.subn(r'([!?.]){2,}', r'\1', text)
     stats['repeated_punctuation_removed'] += n
     text, n = re.subn(r'\s+([,.!?:;])', r'\1', text)
