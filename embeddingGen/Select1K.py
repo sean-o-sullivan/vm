@@ -5,9 +5,9 @@ from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def main():
-    input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
-    output_file = 'output_raw_texts_with_delimiters.csv'
+DELIMITER = "#/#\\#|||#/#\\#|||#/#\\#"
+
+def generate_and_verify_csv(input_csv, output_file):
     df = pd.read_csv(input_csv)
     
     if df.empty:
@@ -22,10 +22,8 @@ def main():
     
     selected_authors = random.sample(df['author'].unique().tolist(), 1000)
     
-    
     with open(output_file, 'w') as f:
-        
-        f.write("author,book,sample_id,processed_sample\n")
+        f.write(f"author{DELIMITER}book{DELIMITER}sample_id{DELIMITER}processed_sample\n")
         
         
         for author in tqdm(selected_authors, desc="Processing authors"):
@@ -37,11 +35,23 @@ def main():
                 selected_texts = author_df
             
             for _, row in selected_texts.iterrows():
-                processed_sample = row['processed_sample']  # Keep my delimiter
-                line = f"{row['author']},{row['book']},{row['sample_id']},\"{processed_sample}\"\n"
+                processed_sample = f"{DELIMITER}{row['processed_sample']}{DELIMITER}"  # Enclose with delimiter
+                line = f"{row['author']}{DELIMITER}{row['book']}{DELIMITER}{row['sample_id']}{DELIMITER}{processed_sample}\n"
                 f.write(line)
 
-    logging.info(f"Processing completed. Raw texts with delimiters saved to {output_file}")
+    logging.info(f"CSV generation completed. File saved as {output_file}")
+
+    verify_csv(output_file)
+
+def verify_csv(output_file):
+    try:
+        # Load the generated CSV using the custom delimiter
+        df = pd.read_csv(output_file, delimiter=DELIMITER)
+        print(f"CSV successfully loaded with {len(df)} rows and the following columns: {df.columns.tolist()}")
+    except Exception as e:
+        logging.error(f"Error loading CSV: {str(e)}")
 
 if __name__ == "__main__":
-    main()
+    input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
+    output_file = 'output_raw_texts_with_delimiters.csv'
+    generate_and_verify_csv(input_csv, output_file)
