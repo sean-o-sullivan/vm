@@ -1,29 +1,21 @@
 import re
+#I still do need a far more robust approach to finding these stupid tables, otherwise gutenberg is very much unusable.......
 
-    #I still do need a far more robust approach to finding these stupid tables, otherwise gutenberg is very much unusable.......
 
 table_patterns = [
     re.compile(
-        r'(?sm)'
-        r'(?:^[A-Z\s.,\'\-]+$\n)?'  
-        r'(?:^[=\-+|_]{2,}.*$\n)+'  
-        r'(?:^.*?(?:\||\+).*$\n)+'  
-        r'(?:^[=\-+|_]{2,}.*$\n)+'  
-        r'(?=\n*(?:[A-Z][a-z]|\Z))'  
+        r'(?sm)'  
+        r'(?:(?:^[A-Z\s.,\'\-]+$\n)?'  
+        r'^(?:[=\-+|_]{2,}.*$\n))'  
+        r'(?:^.*?(?:\||\+|\-).*$\n)+'  
+        r'^(?:[=\-+|_]{2,}.*$\n)?',  
     ),
     re.compile(
         r'(?sm)'
-        r'(?:^[A-Z\s.,\'\-]+$\n)?'  
-        r'(?:^[=\-+|_]{2,}.*$\n)+'  
-        r'(?:^.*?(?:\||\+).*$\n)+'  
-        r'(?:^[=\-+|_]{2,}.*$\n)?'  
-        r'(?=\n*(?:[A-Z][a-z]|\Z))'  
-    ),
-    re.compile(
-        r'(?sm)'
-        r'(?:^[A-Z\s.,\'\-]+$\n)?'  
+        r'(?:(?:^[A-Z\s.,\'\-]+$\n)?'  
+        r'^(?:[=\-+|_]{2,}.*$\n))'  
         r'(?:^[\s\d\w]+(?:\s{2,}[\s\d\w]+)+$\n)+'  
-        r'(?=\n*(?:[A-Z][a-z]|\Z))'  
+        r'^(?:[=\-+|_]{2,}.*$\n)?',  
     )
 ]
 
@@ -169,7 +161,7 @@ def run_tests():
             failed += 1
         print("-" * 40)
 
-    print(f"Test results: {passed} passed, {failed} failed")
+    print(f"Testing final results: {passed} passed, {failed} failed")
 
 if __name__ == "__main__":
     run_tests()
