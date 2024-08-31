@@ -3,8 +3,6 @@ import csv
 import logging
 from tqdm import tqdm
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def process_jsonl(input_file, output_file):
     suitable_books = []
