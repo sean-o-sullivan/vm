@@ -2,6 +2,7 @@ import pandas as pd
 import re
 from bs4 import BeautifulSoup
 import unicodedata
+from tqdm import tqdm
 
 #whole lot of defitions from the internet
 def clean_text(text):
@@ -54,8 +55,24 @@ def process_and_compare(gutenberg_filename, bawe_filename):
     
     gutenberg_df = pd.read_csv(gutenberg_filename)
     bawe_df = pd.read_csv(bawe_filename)
-    gutenberg_df['cleaned_text'] = gutenberg_df['text'].apply(clean_text)
-    bawe_df['cleaned_text'] = bawe_df['text'].apply(clean_text)
+    gutenberg_df['cleaned_text'] = ""
+    bawe_df['cleaned_text'] = ""
+
+    print("\nCleaning Gutenberg Data:\n")
+    for i in tqdm(range(len(gutenberg_df)), desc="Gutenberg"):
+        gutenberg_df.at[i, 'cleaned_text'] = clean_text(gutenberg_df.at[i, 'text'])
+        if i % 100 == 0: 
+            gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
+    
+    print("\nCleaning BAWE Data:\n")
+    for i in tqdm(range(len(bawe_df)), desc="BAWE"):
+        bawe_df.at[i, 'cleaned_text'] = clean_text(bawe_df.at[i, 'text'])
+        if i % 100 == 0: 
+            bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned.csv', index=False)
+
+    gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
+    bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned.csv', index=False)
+
     print("\nGutenberg Data Cleaning:\n")
     for i, row in gutenberg_df.iterrows():
         original_text = row['text']
@@ -71,12 +88,8 @@ def process_and_compare(gutenberg_filename, bawe_filename):
         print(f"Cleaned Text:\n{cleaned_text}\n")
         print("-" * 80)
 
-    gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
-    bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned.csv', index=False)
-
 gutenberg_file = '4493_FromGutenberg.csv'
 bawe_file = 'BAWE_raw.csv'
 
 
 process_and_compare(gutenberg_file, bawe_file)
-
