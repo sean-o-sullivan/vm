@@ -28,11 +28,14 @@ def remove_table_from_text(text):
         return text
 
     start_pos = start_match.start()
+    print(f"start pos is: {start_pos}")
 
     # Step 2: Find the first occurrence of sequences of `=`, `-`, `.` or dashes after the ALL CAPS word
     first_end_match = re.search(r'([=]{3,}|[-]{3,}|[.]{3,})\n|(-{3,})\n', text[start_pos:])
 
     if not first_end_match:
+        # No end sequence found, return the original text
+        print("no end sequence found  returning the original text")
         return text
     
     initial_end_pos = start_pos + first_end_match.end()
@@ -40,12 +43,7 @@ def remove_table_from_text(text):
     # Step 3: Find the true end of the table by looking ahead 500 characters
     true_end_pos = find_true_end(text, initial_end_pos)
 
-    # Optionally, we can also find the start of the next normal sentence after the table
-    normal_text_start = re.search(r'[A-Za-z]', text[true_end_pos:])
-    
-    if normal_text_start:
-        true_end_pos += normal_text_start.start()
-
+    # return the final finished text with the table removed
     return text[:start_pos].strip() + "\n" + text[true_end_pos:].strip()
 
 text_input = """
