@@ -1,8 +1,9 @@
 import os
 import csv
 
-directory_path = '/mnt/data/CORPUS_TXT'  
-output_csv = 'authors_texts.csv'
+
+directory_path = '/home/aiadmin/Downloads/download/CORPUS_TXT'  
+output_csv = 'BAWE_texts.csv'
 
 with open(output_csv, mode='w', newline='', encoding='utf-8') as csv_file:
     writer = csv.writer(csv_file)
