@@ -79,6 +79,13 @@ def clean_text(text):
     stats['equations_removed'] += n
     text, n = re.subn(r'(?m)^\s*[∑∫∏∂∇Δ].*$', '', text)
     stats['equations_removed'] += n
+    text, n = re.subn(r'\b[a-zA-Z0-9]+\s*[\+\-\*/\^]*\s*\(.*?\)\s*[\+\-\*/\^]*\s*[a-zA-Z0-9]*\b', '', text)
+    stats['equations_with_parentheses_removed'] += n
+    
+    text, n = re.subn(r'(?m)^\s*[\(\)\[\]\{\}a-zA-Z0-9]+\s*[-+*/^()]+\s*\(.*?\)\s*.*$', '', text)
+    stats['equations_with_parentheses_removed'] += n
+
+    # Remove special characters commonly used in equations
     text, n = re.subn(r'[±∓×÷∙∘·°∂∇∆∑∏∫√∛∜∝∞≈≠≡≤≥≪≫⊂⊃⊄⊅⊆⊇⊈⊉⊊⊋∈∉∋∌∍∎∏∐∑−]', '', text)
     stats['special_characters_removed'] += n
     text, n = re.subn(r'\b(\d+(?:\s+\d+)+)\b', '', text)
