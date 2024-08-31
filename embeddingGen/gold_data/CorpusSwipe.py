@@ -161,6 +161,10 @@ def clean_text(text):
 
     
 
+
+
+
+
 def process_and_compare(gutenberg_filename, bawe_filename):
     
     gutenberg_df = pd.read_csv(gutenberg_filename)
@@ -176,7 +180,8 @@ def process_and_compare(gutenberg_filename, bawe_filename):
         cleaned_text, stats, removed_tables = clean_text(gutenberg_df.at[i, 'text'])
         gutenberg_df.at[i, 'cleaned_text'] = cleaned_text
         gutenberg_stats += stats
-
+        if removed_tables:
+            save_tables_to_csv(removed_tables, f'gutenberg_tables_{gutenberg_df.at[i, "custom_id"]}.csv')
         if i % 100 == 0 or i == len(gutenberg_df) - 1:
             gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
             save_stats_to_csv(gutenberg_stats, '4493_FromGutenberg_stats.csv')
@@ -187,8 +192,8 @@ def process_and_compare(gutenberg_filename, bawe_filename):
         cleaned_text, stats, removed_tables = clean_text(bawe_df.at[i, 'text'])
         bawe_df.at[i, 'cleaned_text'] = cleaned_text
         bawe_stats += stats
-
-        
+        if removed_tables:
+            save_tables_to_csv(removed_tables, f'bawe_tables_{bawe_df.at[i, "author"]}_{i}.csv')
         if i % 100 == 0 or i == len(bawe_df) - 1:
             bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned.csv', index=False)
             save_stats_to_csv(bawe_stats, 'BAWE_raw_stats.csv')
@@ -199,6 +204,19 @@ def process_and_compare(gutenberg_filename, bawe_filename):
 
     print("\nBAWE Data Cleaning Sample:\n")
     print_sample_comparisons(bawe_df, 5)
+
+
+
+
+def save_tables_to_csv(tables, filename):
+    with open(filename, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for i, table in enumerate(tables):
+            writer.writerow([f"Table {i + 1}"])
+            writer.writerow([table])
+            writer.writerow([])  # Empty row to separate tables
+
+
 
 def save_stats_to_csv(stats, filename):
     with open(filename, 'w', newline='') as f:
