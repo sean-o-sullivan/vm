@@ -58,6 +58,7 @@ def create_question_for_gpt(text):
     question = response.choices[0].message['content']
     return question
 
+
 def generate_mimicry(author_text, question):
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -80,6 +81,7 @@ def extract_topic(text):
     )
     topic = response.choices[0].message['content']
     return topic
+
 
 def generate_text_on_topic(topic, token_count):
     response = client.chat.completions.create(
