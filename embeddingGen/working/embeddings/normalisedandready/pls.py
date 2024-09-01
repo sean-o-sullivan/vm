@@ -106,3 +106,53 @@ print(triplets.head())
 triplets_shuffled = triplets.sample(frac=1).reset_index(drop=True)
 triplets_shuffled.to_csv(r"Final-Triplets.csv", index=False)
 print("Triplet dataset is saved!")
+
+
+
+
+
+
+
+
+
+def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce_criterion, device):
+    siamese_model.eval()
+    classifier_model.eval()
+    running_loss = 0.0
+    all_predictions = []
+    all_labels = []
+    total_batches = len(dataloader)
+    with torch.no_grad():
+        for i, (anchor, positive, negative) in enumerate(dataloader, start=1):
+            anchor, positive, negative = anchor.to(device), positive.to(device), negative.to(device)
+            
+            anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
+            triplet_loss = triplet_criterion(anchor_out, positive_out, negative_out)
+            
+            classifier_out = classifier_model(anchor_out, positive_out, negative_out)
+            bce_loss = bce_criterion(classifier_out, torch.ones_like(classifier_out))
+            
+            loss = triplet_loss + bce_loss
+            running_loss += loss.item()
+            
+            predictions = (classifier_out > 0).float()
+            all_predictions.extend(predictions.cpu().numpy())
+            all_labels.extend([1] * len(predictions))
+            
+            print(f'Validation {i}/{total_batches}', end='\r')
+    
+    overall_accuracy = accuracy_score(all_labels, all_predictions)
+    precision = precision_score(all_labels, all_predictions, zero_division=0)
+    recall = recall_score(all_labels, all_predictions, zero_division=0)
+    f1 = f1_score(all_labels, all_predictions, zero_division=0)
+    mcc = matthews_corrcoef(all_labels, all_predictions)
+    cm = confusion_matrix(all_labels, all_predictions)
+    
+    if cm.shape[0] > 1:  
+        label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
+        label_1_accuracy = cm[1][1] / cm[1].sum() if cm[1].sum() > 0 else 0
+    else:  
+        label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
+        label_1_accuracy = 0
+    
+    return running_loss / total_batches, overall_accuracy, label_0_accuracy, label_1_accuracy, precision, recall, f1, mcc
