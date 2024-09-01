@@ -141,6 +141,13 @@ def orlov_sigma(doc):
     
     return orlov_sigma
 
+
+# Define a standard set of POS tags
+STANDARD_POS_TAGS = [
+    'ADJ', 'ADP', 'ADV', 'AUX', 'CCONJ', 'DET', 'INTJ', 'NOUN', 'NUM',
+    'PART', 'PRON', 'PROPN', 'PUNCT', 'SCONJ', 'SYM', 'VERB', 'X'
+]
+
 def pos_frequencies(doc):
         
     pos_tags = [word.upos for sentence in doc.sentences for word in sentence.words]
@@ -150,9 +157,12 @@ def pos_frequencies(doc):
     
     
     total_pos_tags = len(pos_tags)
-    pos_frequencies = {tag: freq / total_pos_tags for tag, freq in pos_freqs.items()}
+    pos_frequencies = {tag: pos_freqs.get(tag, 0) / total_pos_tags for tag in STANDARD_POS_TAGS}
     
-    return pos_frequencies
+    # Create the final dictionary with the 'pos_frequencies_' prefix
+    return {f'pos_frequencies_{tag}': freq for tag, freq in pos_frequencies.items()}
+
+
 
 def clauses_per_sentence(doc):
 
@@ -191,7 +201,7 @@ def modifiers_per_noun_phrase(doc):
         noun_phrases = [word for word in sentence.words if word.upos == 'NOUN' or word.upos == 'PROPN']
         
         if not noun_phrases:
-            print(f"DEBUG: No noun phrases found in sentence: '{sentence.text}'")
+            ##print(f"DEBUG: No noun phrases found in sentence: '{sentence.text}'")
             continue
         
         total_noun_phrases += len(noun_phrases)
@@ -200,7 +210,7 @@ def modifiers_per_noun_phrase(doc):
         
         for noun_phrase in noun_phrases:
             modifiers = [word for word in sentence.words if word.deprel in modifier_relations and word.head == noun_phrase.id]
-            print(f"DEBUG: Noun phrase '{noun_phrase.text}' has {len(modifiers)} modifiers.")
+            ##print(f"DEBUG: Noun phrase '{noun_phrase.text}' has {len(modifiers)} modifiers.")
             total_modifiers += len(modifiers)
             sentence_mod_count += len(modifiers)
         
@@ -212,8 +222,8 @@ def modifiers_per_noun_phrase(doc):
 
     avg_modifiers_per_noun_phrase = total_modifiers / total_noun_phrases
     
-    print(f"DEBUG: Total noun phrases = {total_noun_phrases}, Total modifiers = {total_modifiers}, Average = {avg_modifiers_per_noun_phrase}")
-    print(f"DEBUG: Modifiers per sentence: {sentence_modifiers}")
+    ##print(f"DEBUG: Total noun phrases = {total_noun_phrases}, Total modifiers = {total_modifiers}, Average = {avg_modifiers_per_noun_phrase}")
+    ##print(f"DEBUG: Modifiers per sentence: {sentence_modifiers}")
     
     return avg_modifiers_per_noun_phrase
 
@@ -456,7 +466,7 @@ def yules_k_characteristic(doc):
     
     total_words = len(words)
     if total_words == 0:
-        print("DEBUG: No words found in the document.")
+        ##print("DEBUG: No words found in the document.")
         return 0
     
     
@@ -470,8 +480,8 @@ def yules_k_characteristic(doc):
     
     M2 = sum(freq ** 2 for freq in frequency_distribution.values())
     
-    
-    print(f"DEBUG: M1 = {M1}, M2 = {M2}, Unique words = {len(frequency_distribution)}")
+    # Debug ##print to check intermediate values
+    ##print(f"DEBUG: M1 = {M1}, M2 = {M2}, Unique words = {len(frequency_distribution)}")
     
     
     if M1 == 0:
@@ -482,7 +492,7 @@ def yules_k_characteristic(doc):
     
     yules_k = max(0, yules_k)
     
-    print(f"DEBUG: Yule's K = {yules_k}")
+    ##print(f"DEBUG: Yule's K = {yules_k}")
     return yules_k
 
 
@@ -1064,39 +1074,39 @@ def is_inverted_structure(sentence):
     adv_positions = []
     potential_subject_positions = []
 
-    print(f"\nProcessing sentence: '{sentence.text}'")
+    ##print(f"\nProcessing sentence: '{sentence.text}'")
 
     for i, word in enumerate(sentence.words):
-        print(f"Word: {word.text}, DepRel: {word.deprel}, UPOS: {word.upos}")
+        ##print(f"Word: {word.text}, DepRel: {word.deprel}, UPOS: {word.upos}")
         if word.deprel in ('nsubj', 'nsubjpass', 'csubj', 'csubjpass'):
             subject_positions.append(i)
-            print(f" - Subject found at position {i}")
+            ##print(f" - Subject found at position {i}")
         elif word.deprel in ('obj', 'iobj') and word.upos == 'NOUN':
             potential_subject_positions.append(i)
-            print(f" - Potential subject found at position {i}")
+            ##print(f" - Potential subject found at position {i}")
         elif word.upos in ('VERB', 'AUX'):
             verb_positions.append(i)
-            print(f" - Verb found at position {i}")
+            ##print(f" - Verb found at position {i}")
         elif word.deprel == 'expl':
             expletive_positions.append(i)
-            print(f" - Expletive found at position {i}")
+            ##print(f" - Expletive found at position {i}")
         elif word.text.lower() in ('here', 'there') and word.deprel == 'advmod':
             emphatic_positions.append(i)
-            print(f" - Emphatic word found at position {i}")
+            ##print(f" - Emphatic word found at position {i}")
         elif word.upos == 'ADV':
             adv_positions.append(i)
-            print(f" - Adverb found at position {i}")
+            ##print(f" - Adverb found at position {i}")
 
     
     if expletive_positions and verb_positions:
         if min(expletive_positions) < min(verb_positions):
-            print(" -> Expletive inversion detected")
+            ##print(" -> Expletive inversion detected")
             return "expletive_inversion"
 
     
     if emphatic_positions and verb_positions:
         if min(emphatic_positions) < min(verb_positions):
-            print(" -> Emphatic inversion detected")
+            ##print(" -> Emphatic inversion detected")
             return "emphatic_inversion"
 
     
@@ -1105,14 +1115,14 @@ def is_inverted_structure(sentence):
         if min(all_subject_positions) > min(verb_positions):
             
             if (adv_positions and min(adv_positions) == 0) or (sentence.words[0].upos == 'ADP'):
-                print(" -> Classic inversion detected (with initial adverb or prepositional phrase)")
+                ##print(" -> Classic inversion detected (with initial adverb or prepositional phrase)")
                 return "classic_inversion"
             else:
-                print(" -> Classic inversion detected")
+                ##print(" -> Classic inversion detected")
                 return "classic_inversion"
 
-    
-    print(" -> No inversion detected")
+    # If no inversion is found, return None
+    ##print(" -> No inversion detected")
     return None
 
 def compute_inversion_frequencies(doc):
@@ -1167,11 +1177,11 @@ def has_embedded_clause(sentence):
     """Check if a sentence has an embedded clause."""
     for word in sentence.words:
         if is_embedded_clause(word):
-            print(f"DEBUG: Embedded clause detected: {word.text} ({word.deprel})")
+            ##print(f"DEBUG: Embedded clause detected: {word.text} ({word.deprel})")
             return True
         
         if word.deprel in {"acl", "acl:relcl"} and word.upos == "VERB":
-            print(f"DEBUG: Reduced relative clause detected: {word.text} ({word.deprel})")
+            ##print(f"DEBUG: Reduced relative clause detected: {word.text} ({word.deprel})")
             return True
     return False
 
@@ -1180,17 +1190,17 @@ def calculate_embedded_clause_ratio(doc):
     total_sentences = len(doc.sentences)
     
     if total_sentences == 0:
-        print("DEBUG: No sentences found in the document.")
+        ##print("DEBUG: No sentences found in the document.")
         return 0.0
     
     for sent in doc.sentences:
         has_embedded = has_embedded_clause(sent)
-        print(f"DEBUG: Sentence '{sent.text}' has embedded clause: {has_embedded}")
+        ##print(f"DEBUG: Sentence '{sent.text}' has embedded clause: {has_embedded}")
         if has_embedded:
             embedded_clauses += 1
     
     ratio = embedded_clauses / total_sentences
-    print(f"DEBUG: Total sentences = {total_sentences}, Sentences with embedded clauses = {embedded_clauses}, Ratio = {ratio:.4f}")
+    ##print(f"DEBUG: Total sentences = {total_sentences}, Sentences with embedded clauses = {embedded_clauses}, Ratio = {ratio:.4f}")
     return ratio
 
 def estimated_stressed_syllables(word):
@@ -1299,7 +1309,7 @@ def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
              if word.text.isalpha() and len(word.text) >= min_word_length]
     
     if len(words) == 0:
-        print("No valid words found in the document.")
+        ##print("No valid words found in the document.")
         return np.nan
     
     
@@ -1319,7 +1329,7 @@ def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
                             bounds=([0, 0], [np.inf, np.inf]))
         s, c = popt
     except Exception as e:
-        print(f"Error in fitting Zipfian distribution: {e}")
+        #print(f"Error in fitting Zipfian distribution: {e}")
         return np.nan
     
     
@@ -1339,9 +1349,9 @@ def compute_zipfian_loss(doc, min_word_length=1, max_rank=None):
     ss_tot = np.sum((freq_norm - np.mean(freq_norm)) ** 2)
     r_squared = 1 - (ss_res / ss_tot)
     
-    print(f"Fitted Zipf's law parameters: s = {s:.4f}, c = {c:.4f}")
-    print(f"R-squared: {r_squared:.4f}")
-    print(f"KL divergence: {kl_div:.6f}")
+    #print(f"Fitted Zipf's law parameters: s = {s:.4f}, c = {c:.4f}")
+    #print(f"R-squared: {r_squared:.4f}")
+    #print(f"KL divergence: {kl_div:.6f}")
     
     return kl_div
 
@@ -1514,8 +1524,7 @@ def guirauds_index(doc):
     return guirauds_index_value
 
 def sentence_type_ratio(doc):
-    
-    sentence_type_counts = defaultdict(int)
+    sentence_type_counts = defaultdict(int, {'simple': 0, 'compound': 0, 'complex': 0, 'compound-complex': 0})
     total_sentences = len(doc.sentences)
     
     for sentence in doc.sentences:
@@ -1548,6 +1557,7 @@ def sentence_type_ratio(doc):
         sentence_type_ratios = {typ: ratio / total_ratio for typ, ratio in sentence_type_ratios.items()}
     
     return sentence_type_ratios
+    
 
 def calculate_frazier_depth(sentence):
 
