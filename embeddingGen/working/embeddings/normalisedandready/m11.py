@@ -11,6 +11,74 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def set_seed(seed=42):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+set_seed()
+
+class EnhancedEncoder(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(EnhancedEncoder, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.bn1 = nn.BatchNorm1d(hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.bn2 = nn.BatchNorm1d(hidden_size)
+        self.fc3 = nn.Linear(hidden_size, hidden_size // 2)
+        self.bn3 = nn.BatchNorm1d(hidden_size // 2)
+        self.fc4 = nn.Linear(hidden_size // 2, hidden_size // 2)
+        self.bn4 = nn.BatchNorm1d(hidden_size // 2)
+        self.relu = nn.LeakyReLU(0.1)
+        self.dropout = nn.Dropout(0.3)
+
+    def forward(self, x):
+        x = self.relu(self.bn1(self.fc1(x)))
+        x = self.dropout(x)
+        x = self.relu(self.bn2(self.fc2(x)))
+        x = self.dropout(x)
+        x = self.relu(self.bn3(self.fc3(x)))
+        x = self.dropout(x)
+        x = self.bn4(self.fc4(x))
+        return F.normalize(x, p=2, dim=1)  # L2 normalization
+
+class EnhancedSiameseNetwork(nn.Module):
+    def __init__(self, input_size, hidden_size):
+        super(EnhancedSiameseNetwork, self).__init__()
+        self.encoder = EnhancedEncoder(input_size, hidden_size)
+
+    def forward(self, anchor, positive, negative):
+        anchor_out = self.encoder(anchor)
+        positive_out = self.encoder(positive)
+        negative_out = self.encoder(negative)
+        return anchor_out, positive_out, negative_out
+
+class TripletDataset(Dataset):
+    def __init__(self, csv_file):
+        self.data = pd.read_csv(csv_file)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        row = self.data.iloc[idx]
+        anchor_embedding = ast.literal_eval(row['anchor_embedding'])
+        positive_embedding = ast.literal_eval(row['positive_embedding'])
+        negative_embedding = ast.literal_eval(row['negative_embedding'])
+        return (torch.tensor(anchor_embedding, dtype=torch.float32),
+                torch.tensor(positive_embedding, dtype=torch.float32),
+                torch.tensor(negative_embedding, dtype=torch.float32))
+
+
+
+
+
+# Hyperparameters
 input_size = 112
 hidden_size = 256
 lr = 0.001
@@ -24,6 +92,40 @@ margin = 0.3
 criterion = nn.MarginRankingLoss(margin=margin)
 optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
+
+
+current_dir = os.getcwd()
+train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
+
+
+def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
+    siamese_model.train()
+    running_loss = 0.0
+    pbar = tqdm(dataloader, desc="Training")
+    for anchor, positive, negative in pbar:
+        anchor, positive, negative = anchor.to(device), positive.to(device), negative.to(device)
+        
+        optimizer.zero_grad()
+        
+        anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
+        
+        dist_pos = F.pairwise_distance(anchor_out, positive_out)
+        dist_neg = F.pairwise_distance(anchor_out, negative_out)
+        
+        # Use 1 for positive pairs (should be ranked higher) and -1 for negative pairs
+        target = torch.ones(anchor_out.size(0)).to(device)
+        
+        loss = criterion(dist_neg, dist_pos, target)
+        
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+        pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
+    return running_loss / len(dataloader)
 
 def evaluate(siamese_model, dataloader, criterion, device):
     siamese_model.eval()
