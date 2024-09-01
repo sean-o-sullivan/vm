@@ -86,50 +86,53 @@ def visualize_features(combined_df, stats_data, output_file, dpi=300, discrimina
 
     return stats_data
 
-def print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5):
-    print("\nFeature Statistics and Suggestions:")
-    print("===================================")
+# def print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5):
+#     print("\nFeature Statistics and Suggestions:")
+#     print("===================================")
     
-    features_to_omit = []
+#     features_to_omit = []
     
-    for col in stats_data.index:
-        cv = stats_data.at[col, 'cv']
-        kurtosis = stats_data.at[col, 'kurtosis']
-        skewness = stats_data.at[col, 'skewness']
-        all_zeros = stats_data.at[col, 'all_zeros']
+#     for col in stats_data.index:
+#         cv = stats_data.at[col, 'cv']
+#         kurtosis = stats_data.at[col, 'kurtosis']
+#         skewness = stats_data.at[col, 'skewness']
+#         all_zeros = stats_data.at[col, 'all_zeros']
         
-        discriminative_score = calculate_discriminative_score(cv, kurtosis, skewness)
+#         discriminative_score = calculate_discriminative_score(cv, kurtosis, skewness)
         
-        print(f"\nFeature: {col}")
-        print(f"  CV: {cv:.4f}")
-        print(f"  Kurtosis: {kurtosis:.4f}")
-        print(f"  Skewness: {skewness:.4f}")
-        print(f"  Discriminative Score: {discriminative_score:.4f}")
+#         print(f"\nFeature: {col}")
+#         print(f"  CV: {cv:.4f}")
+#         print(f"  Kurtosis: {kurtosis:.4f}")
+#         print(f"  Skewness: {skewness:.4f}")
+#         print(f"  Discriminative Score: {discriminative_score:.4f}")
         
-        if all_zeros:
-            print("  Status: ALL ZEROS")
-            features_to_omit.append(col)
-        elif discriminative_score <= discriminative_threshold:
-            print("  Status: Not Discriminative")
-            features_to_omit.append(col)
-        else:
-            print("  Status: Discriminative")
+#         if all_zeros:
+#             print("  Status: ALL ZEROS")
+#             features_to_omit.append(col)
+#         elif discriminative_score <= discriminative_threshold:
+#             print("  Status: Not Discriminative")
+#             features_to_omit.append(col)
+#         else:
+#             print("  Status: Discriminative")
     
-    print("\nSuggested features to omit:")
-    print(features_to_omit)
+#     print("\nSuggested features to omit:")
+#     print(features_teo_omit)
     
-    return features_to_omit
+#     return features_to_omit
 
 def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_omit, output_dir):
     raw_embedding = pd.read_csv(csv_of_embeddings)
     
     normalized_embedding = pd.DataFrame()
     
+    # Keep both embedding_id and author_id
     if 'embedding_id' in raw_embedding.columns:
         normalized_embedding['embedding_id'] = raw_embedding['embedding_id']
+    if 'author_id' in raw_embedding.columns:
+        normalized_embedding['author_id'] = raw_embedding['author_id']
     
     for col in raw_embedding.columns:
-        if col != 'embedding_id' and col in stats_data.index and col not in features_to_omit:
+        if col not in ['embedding_id', 'author_id'] and col in stats_data.index and col not in features_to_omit:
             mean = stats_data.at[col, 'mean']
             std = stats_data.at[col, 'std']
             percentile_95 = stats_data.at[col, 'percentile_95']
@@ -152,6 +155,22 @@ def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_o
     
     print(f"Normalized embedding saved to: {output_file_path}")
 
+def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir):
+    """
+    Normalize a future CSV file using pre-calculated statistics.
+    
+    Parameters:
+    - csv_path: Path to the CSV file to be normalized
+    - stats_data_path: Path to the pre-calculated statistics CSV file
+    - features_to_omit: List of features to exclude from normalization
+    - output_dir: Directory to save the normalized CSV
+    """
+    # Load the statistics
+    stats_data = pd.read_csv(stats_data_path, index_col=0)
+    
+    # Normalize the embedding
+    normalize_and_filter_embeddings(csv_path, stats_data, features_to_omit, output_dir)
+
 def main():
     file_paths = [
         'ABB_30_embeddings.csv',
@@ -164,10 +183,14 @@ def main():
     stats_data = calculate_statistics(combined_df)
     stats_data.to_csv('embedding_stats.csv', index=True)
 
-    stats_data = visualize_features(combined_df, stats_data, 'feature_distributions.png', dpi=300, discriminative_threshold=0.5)
-    suggested_features_to_omit = print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5)
-    features_to_omit = []  #I will fill this soon
+    stats_data = visualize_features(combined_df, stats_data, 'feature_distributionsF.png', dpi=300, discriminative_threshold=0.5)
+    #suggested_features_to_omit = print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5)
+    
     output_dir = 'normalisedandready'
+    features_to_omit = [
+    "ratio_of_sentence_initial_conjunctions",
+    "normalized_assonance"
+    ]
     
     for csv_file in file_paths:
         normalize_and_filter_embeddings(csv_file, stats_data, features_to_omit, output_dir)
