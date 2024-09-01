@@ -50,6 +50,7 @@ def process_entry(row, expected_keys, key_counts, embedding_id):
     processed_sample = row['cleaned_text']
     
     processed_sample = processed_sample.replace("#/#\\#|||#/#\\#|||#/#\\#", "")
+    processed_sample = processed_sample.replace("'''", "")
     
     print(f"Processing embedding_id: {embedding_id}")
     print(f"Processed sample (first 100 chars): {processed_sample[:100]}")
@@ -120,20 +121,15 @@ Fergus's wife was a thoroughly dislikable, sharp-featured woman named Beryl. She
     
     logging.info(f"Processing completed. Embeddings saved to {output_file}")
 
-
-
-
-
 def main():
-    # Process AGG.csv
+
+    # process_csv('ABB.csv', 'ABB_70.csv', 'ABB_30.csv')
+    generate_embeddings('ABB_70.csv', 'ABB_70_embeddings.csv')
+    generate_embeddings('ABB_30.csv', 'ABB_30_embeddings.csv')
    # process_csv('AGG.csv', 'AGG_70.csv', 'AGG_30.csv')
     generate_embeddings('AGG_70.csv', 'AGG_70_embeddings.csv')
     generate_embeddings('AGG_30.csv', 'AGG_30_embeddings.csv')
 
-    # Process ABB.csv
-    # process_csv('ABB.csv', 'ABB_70.csv', 'ABB_30.csv')
-    generate_embeddings('ABB_70.csv', 'ABB_70_embeddings.csv')
-    generate_embeddings('ABB_30.csv', 'ABB_30_embeddings.csv')
 
     print("Processing complete. All output files have been created.")
 
