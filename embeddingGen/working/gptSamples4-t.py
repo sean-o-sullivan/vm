@@ -2,13 +2,13 @@ import os
 import pandas as pd
 import logging
 from tqdm import tqdm
-import openai
+from openai import OpenAI
 import tiktoken
 from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-os.environ["OPENAI_API_KEY"] = "my-key"
-openai.api_key = os.getenv("OPENAI_API_KEY")
+os.environ["OPENAI_API_KEY"] = "mykey"
+OpenAI.api_key = os.getenv("OPENAI_API_KEY")
 
 CREATE_QUESTION_PROMPT = """
 Generate a thought-provoking question that encourages a response in the style and on a topic similar to the given text. 
@@ -41,11 +41,13 @@ Your goal is to produce engaging and informative content on the provided topic.
 """
 
 def count_tokens(text):
+    """Count the number of tokens in the given text."""
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     return len(encoding.encode(text))
 
 def create_question_for_gpt(text):
-    response = openai.ChatCompletion.create(
+    """Generate a question based on the provided text."""
+    response = OpenAI.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": CREATE_QUESTION_PROMPT},
@@ -56,7 +58,8 @@ def create_question_for_gpt(text):
     return question
 
 def generate_mimicry(author_text, question):
-    response = openai.ChatCompletion.create(
+    """Generate a text that mimics the author's style."""
+    response = OpenAI.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": GENERATE_MIMICRY_PROMPT},
@@ -68,7 +71,8 @@ def generate_mimicry(author_text, question):
     return generated_text
 
 def extract_topic(text):
-    response = openai.ChatCompletion.create(
+    """Extract a general topic from the given text."""
+    response = OpenAI.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Extract a general topic from the given text in 5 words or less."},
@@ -79,6 +83,7 @@ def extract_topic(text):
     return topic
 
 def generate_text_on_topic(topic, token_count):
+    """Generate text on the given topic with approximately the specified token count."""
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -90,11 +95,14 @@ def generate_text_on_topic(topic, token_count):
     return generated_text
 
 def remove_delimiters(text):
+    """Removes custom text delimiters from the processed sample."""
     return text.replace("#/#\\#|||#/#\\#|||#/#\\#", "")
     return text.replace("'''", "")
 
 def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples_per_author):
+    """Processes samples from the CSV and generates mimicry and topic-based samples."""
     logging.info(f"Loading dataset from: {input_csv}")
+    
     df = pd.read_csv(input_csv)
     
     if df.empty:
@@ -104,8 +112,6 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
     logging.info(f"Total samples to process: {len(df)}")
 
     author_sample_count = defaultdict(int)
-
-    # Create the output CSV files with headers if they don't exist
     if not os.path.exists(output_mimicry_csv):
         pd.DataFrame(columns=["author", "original_text", "past_example", "generated_question", "generated_mimicry"]).to_csv(output_mimicry_csv, index=False)
     if not os.path.exists(output_topic_csv):
@@ -130,8 +136,6 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
             "generated_question": question,
             "generated_mimicry": mimicry_sample
         }
-
-        # Generate topic-based sample
         topic = extract_topic(cleaned_sample)
         topic_based_sample = generate_text_on_topic(topic, original_token_count)
 
@@ -143,6 +147,7 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
             "generated_text": topic_based_sample,
             "generated_token_count": count_tokens(topic_based_sample)
         }
+
         pd.DataFrame([mimicry_result]).to_csv(output_mimicry_csv, mode='a', header=False, index=False)
         pd.DataFrame([topic_result]).to_csv(output_topic_csv, mode='a', header=False, index=False)
         author_sample_count[author] += 1
@@ -152,7 +157,7 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
 
 if __name__ == "__main__":
     input_csvs = ['ABB_30.csv', 'AGG_30.csv']
-    max_samples_per_author = 2
+    max_samples_per_author = 2 
 
     for input_csv in input_csvs:
         output_mimicry_csv = f'mimicry_samples_GPT3{input_csv.split(".")[0]}.csv'
