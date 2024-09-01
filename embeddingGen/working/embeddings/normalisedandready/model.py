@@ -141,8 +141,8 @@ triplet_criterion = nn.TripletMarginWithDistanceLoss(distance_function=lambda x,
 bce_criterion = nn.BCEWithLogitsLoss()
 
 current_dir = os.getcwd()
-train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_B_70_|_VTL5_C3.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_B_30_|_VTL5_C3.csv"))
+train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -202,8 +202,8 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
             running_loss += loss.item()
             
             # Sigmoid outputs for predictions
-            predictions_positive = (torch.sigmoid(positive_classifier_out) > 0.9).float().cpu().numpy()
-            predictions_negative = (torch.sigmoid(negative_classifier_out) <= 0.9).float().cpu().numpy()
+            predictions_positive = (torch.sigmoid(positive_classifier_out) > 0.5).float().cpu().numpy()
+            predictions_negative = (torch.sigmoid(negative_classifier_out) <= 0.5).float().cpu().numpy()
             
             all_predictions.extend(predictions_positive)
             all_labels.extend(np.ones_like(predictions_positive))
