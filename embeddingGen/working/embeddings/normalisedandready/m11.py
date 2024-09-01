@@ -88,7 +88,7 @@ num_epochs = 200
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 
 # Use MarginRankingLoss
-margin = 0.3
+margin = 0.05
 criterion = nn.MarginRankingLoss(margin=margin)
 optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
