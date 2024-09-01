@@ -133,6 +133,9 @@ num_epochs = 100
 siamese_net = EnhancedSiameseNetwork(input_size, d_model, nhead, num_layers, dim_feedforward, dropout).to(device)
 classifier_net = EnhancedClassifierNet(d_model).to(device)
 
+
+
+# Optimizer and loss
 optimizer = optim.AdamW(list(siamese_net.parameters()) + list(classifier_net.parameters()), lr=lr, weight_decay=1e-5)
 triplet_criterion = nn.TripletMarginWithDistanceLoss(distance_function=lambda x, y: 1.0 - F.cosine_similarity(x, y))
 bce_criterion = nn.BCEWithLogitsLoss()
