@@ -74,25 +74,30 @@ context_embeddings_df['anchor_embedding'] = context_embeddings_df.iloc[:, 1:-1].
 context_embeddings_df = context_embeddings_df.drop(['context_index', 'author'], axis=1)
 combined_df = pd.concat([context_embeddings_df['anchor_embedding'], true_pairs_df], axis=1)
 
+
 false_pairs_list = []
+authors = df['author'].unique()
+
 for index, context_row in tqdm(context_embeddings_df.iterrows(), total=context_embeddings_df.shape[0], desc='Generating false pairs', dynamic_ncols=True):
-    context_embed = ast.literal_eval(context_row['anchor_embedding'])
+    anchor_embedding = context_row['anchor_embedding']
+    anchor_author = context_embeddings_with_index[index][-1]
     
-    mask = df.iloc[:, :-2].apply(lambda row: np.allclose(row.astype(float).tolist(), context_embed), axis=1)
-    if not mask.any():
-        print(f"Warning: No matching author found for context embedding at index {index}")
-        continue
-    
-    author = df.loc[mask, 'author'].values[0]
-    other_authors_data = df[df['author'] != author].drop(columns=['embedding_id', 'author'])
-    if other_authors_data.empty:
+    other_authors = [author for author in authors if author != anchor_author]
+    if not other_authors:
         print(f"Warning: No other authors found for context embedding at index {index}")
         continue
     
-    negative_embed = other_authors_data.sample(1).values.flatten().tolist()
-    false_pairs_list.append({'anchor_embedding': context_row['anchor_embedding'],
-                             'negative_embedding': str(negative_embed)})
+    negative_author = choice(other_authors)
+    negative_texts = df[df['author'] == negative_author].drop(columns=['embedding_id', 'author'])
+    negative_embed = negative_texts.sample(1).values.flatten().tolist()
+    
+    false_pairs_list.append({
+        'anchor_embedding': anchor_embedding,
+        'negative_embedding': str(negative_embed)
+    })
+
 false_pairs_df = pd.DataFrame(false_pairs_list)
+
 triplets = pd.concat([combined_df, false_pairs_df['negative_embedding']], axis=1)
 
 print("\nThe triplet has the following columns:", triplets.columns)
