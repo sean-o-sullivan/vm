@@ -2,18 +2,15 @@ import os
 import pandas as pd
 import logging
 from tqdm import tqdm
-import openai
+from openai import OpenAI
 import tiktoken
 from collections import defaultdict
 
-# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Set your OpenAI API key
-os.environ["OPENAI_API_KEY"] = "your-openai-api-key-here"
-openai.api_key = os.getenv("OPENAI_API_KEY")
+os.environ["OPENAI_API_KEY"] = "my-key-here"
+OpenAI.api_key = os.getenv("OPENAI_API_KEY")
 
-# System prompts
 CREATE_QUESTION_PROMPT = """
 Generate a thought-provoking question that encourages a response in the style and on a topic similar to the given text. 
 The question should:
@@ -130,8 +127,6 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
             "generated_question": question,
             "generated_mimicry": mimicry_sample[:500]
         })
-
-        # Generate topic-based sample
         topic = extract_topic(cleaned_sample)
         topic_based_sample = generate_text_on_topic(topic, original_token_count)
 
@@ -154,7 +149,8 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
 
 if __name__ == "__main__":
     input_csvs = ['ABB_30.csv', 'AGG_30.csv']
-    max_samples_per_author = 3  
+    max_samples_per_author = 2
+
     for input_csv in input_csvs:
         output_mimicry_csv = f'mimicry_samples_{input_csv.split(".")[0]}.csv'
         output_topic_csv = f'topic_based_samples_{input_csv.split(".")[0]}.csv'
