@@ -25,6 +25,7 @@ def process_csv(input_file, output_file_70, output_file_30):
     authors_30 = authors[split_point:]
     write_output(output_file_70, author_texts, authors_70)
     write_output(output_file_30, author_texts, authors_30)
+    
 
 def write_output(output_file, author_texts, authors):
     with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
@@ -84,34 +85,28 @@ def generate_embeddings(input_file, output_file):
     print(f"Expected embedding keys: {expected_keys}")
     print(f"Expected embedding dimension: {len(expected_keys)}")
     key_counts = defaultdict(int)
+    result_df = pd.DataFrame()
+    counter = 0
     tqdm.pandas(desc="Processing entries")
-    result_df = df.progress_apply(lambda row: process_entry(row, expected_keys, key_counts), axis=1)
-    result_df = result_df.dropna()
-    embedding_cols = [col for col in result_df.columns if col not in ['author', 'book', 'sample_id']]
-    actual_keys = set(embedding_cols)
+    for index, row in df.iterrows():
+        processed_row = process_entry(row, expected_keys, key_counts)
+        if processed_row is not None:
+            result_df = result_df.append(processed_row, ignore_index=True)
+            counter += 1
+
+
+        if counter % 10 == 0:
+            result_df.to_csv(output_file, index=False, mode='a', header=not pd.io.common.file_exists(output_file))
+            result_df = pd.DataFrame() 
+
+    if not result_df.empty:
+        result_df.to_csv(output_file, index=False, mode='a', header=not pd.io.common.file_exists(output_file))
     
-    print("\nEmbedding Key Analysis:")
-    print(f"Expected keys: {len(expected_keys)}")
-    print(f"Actual keys: {len(actual_keys)}")
-    
-    new_keys = actual_keys - expected_keys
-    missing_keys = expected_keys - actual_keys
-    
-    if new_keys:
-        print(f"New keys found: {new_keys}")
-    if missing_keys:
-        print(f"Missing keys: {missing_keys}")
-    
-    print("\nKey Frequency Analysis:")
-    total_samples = len(result_df)
-    for key, count in key_counts.items():
-        frequency = count / total_samples
-        print(f"{key}: {frequency:.2%}")
-    result_df.to_csv(output_file, index=False)
     logging.info(f"Processing completed. Embeddings saved to {output_file}")
 
 def main():
-    process_csv('AGG.csv', 'AGG_70.csv', 'AGG_30.csv')
+    # Process AGG.csv
+   # process_csv('AGG.csv', 'AGG_70.csv', 'AGG_30.csv')
     generate_embeddings('AGG_70.csv', 'AGG_70_embeddings.csv')
     generate_embeddings('AGG_30.csv', 'AGG_30_embeddings.csv'
     process_csv('ABB.csv', 'ABB_70.csv', 'ABB_30.csv')
@@ -122,4 +117,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
