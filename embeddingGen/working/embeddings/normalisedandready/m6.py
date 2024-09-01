@@ -192,6 +192,9 @@ for epoch in range(num_epochs):
         }, best_model_path)
         print(f"New best model found and saved at epoch {epoch+1} with MCC: {mcc:.4f}")
     if (epoch + 1) % 10 == 0:
+        print(f"Positive distances: min={np.min(all_distances_pos):.4f}, max={np.max(all_distances_pos):.4f}, mean={np.mean(all_distances_pos):.4f}")
+        print(f"Negative distances: min={np.min(all_distances_neg):.4f}, max={np.max(all_distances_neg):.4f}, mean={np.mean(all_distances_neg):.4f}")
+        
         model_save_path = f"{current_dir}/enhanced_siamese_model_epoch_{epoch+1}.pth"
         torch.save({
             'epoch': epoch + 1,
