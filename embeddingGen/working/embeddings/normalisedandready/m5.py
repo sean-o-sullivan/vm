@@ -109,8 +109,8 @@ def train_epoch(siamese_model, dataloader, triplet_criterion, optimizer, device)
 def evaluate(siamese_model, dataloader, triplet_criterion, device):
     siamese_model.eval()
     running_loss = 0.0
-    all_distances = []
-    all_labels = []
+    all_distances_pos = []
+    all_distances_neg = []
     
     with torch.no_grad():
         for anchor, positive, negative in dataloader:
@@ -124,30 +124,40 @@ def evaluate(siamese_model, dataloader, triplet_criterion, device):
             dist_pos = F.pairwise_distance(anchor_out, positive_out)
             dist_neg = F.pairwise_distance(anchor_out, negative_out)
             
-            # Append distances with correct labels
-            all_distances.extend(dist_pos.cpu().numpy())
-            all_labels.extend(np.ones_like(dist_pos.cpu().numpy()))  
-            all_distances.extend(dist_neg.cpu().numpy())
-            all_labels.extend(np.zeros_like(dist_neg.cpu().numpy()))  
+            all_distances_pos.extend(dist_pos.cpu().numpy())
+            all_distances_neg.extend(dist_neg.cpu().numpy())
     
-    # Convert to numpy arrays
-    all_distances = np.array(all_distances)
-    all_labels = np.array(all_labels)
+    all_distances_pos = np.array(all_distances_pos)
+    all_distances_neg = np.array(all_distances_neg)
     
-    # Choose the optimal threshold based on distances of positive and negative pairs
-    best_threshold = np.mean(all_distances)  # or optimize this using some criterion
+    # Calculate separate thresholds for positive and negative pairs
+    threshold_pos = np.percentile(all_distances_pos, 95)  # 95th percentile for positive pairs
+    threshold_neg = np.percentile(all_distances_neg, 5)   # 5th percentile for negative pairs
+    
+    # Use the average of the two thresholds
+    best_threshold = (threshold_pos + threshold_neg) / 2
+    
+    # Combine distances and create labels
+    all_distances = np.concatenate([all_distances_pos, all_distances_neg])
+    all_labels = np.concatenate([np.ones_like(all_distances_pos), np.zeros_like(all_distances_neg)])
     
     # predictions based on the best threshold
     predictions = (all_distances < best_threshold).astype(int)
     
     # evaluation metrics
-    accuracy = accuracy_score(all_labels, predictions)
-    precision = precision_score(all_labels, predictions)
-    recall = recall_score(all_labels, predictions)
-    f1 = f1_score(all_labels, predictions)
-    mcc = matthews_corrcoef(all_labels, predictions)
+    try:
+        accuracy = accuracy_score(all_labels, predictions)
+        precision = precision_score(all_labels, predictions)
+        recall = recall_score(all_labels, predictions)
+        f1 = f1_score(all_labels, predictions)
+        mcc = matthews_corrcoef(all_labels, predictions)
+    except Exception as e:
+        print(f"Error in calculating metrics: {e}")
+        return running_loss / len(dataloader), 0, 0, 0, 0, 0
     
     return running_loss / len(dataloader), accuracy, precision, recall, f1, mcc
+
+
 
 print("Starting Training!")
 for epoch in range(num_epochs):
