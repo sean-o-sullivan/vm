@@ -7,8 +7,7 @@ import tiktoken
 from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-os.environ["OPENAI_API_KEY"] = "my-key-here"
+os.environ["OPENAI_API_KEY"] = "my-key"
 OpenAI.api_key = os.getenv("OPENAI_API_KEY")
 
 CREATE_QUESTION_PROMPT = """
