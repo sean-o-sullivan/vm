@@ -9,8 +9,7 @@ from collections import defaultdict
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 os.environ["OPENAI_API_KEY"] = "my-key"
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
-os.environ["OPENAI_API_KEY"] = "my-key"
+os.environ["OPENAI_API_KEY"] = "mykey"
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 CREATE_QUESTION_PROMPT = """
@@ -44,47 +43,52 @@ Your goal is to produce engaging and informative content on the provided topic.
 """
 
 def count_tokens(text):
-    encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+    encoding = tiktoken.encoding_for_model("gpt-4")
     return len(encoding.encode(text))
 
 def create_question_for_gpt(text):
-    response = client.Completion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        prompt=f"{CREATE_QUESTION_PROMPT}\n\nText: \"{text}\"\nQuestion:",
-        max_tokens=50,
-        temperature=0.7
+        messages=[
+            {"role": "system", "content": CREATE_QUESTION_PROMPT},
+            {"role": "user", "content": f"Generate a question based on this text: \"{text}\""}
+        ]
     )
-    question = response.choices[0].text.strip()
+    question = response.choices[0].message['content']
     return question
 
 def generate_mimicry(author_text, question):
-    response = client.Completion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        prompt=f"{GENERATE_MIMICRY_PROMPT}\n\nAuthor's sample: {author_text}\n\nQuestion: {question}\n\nResponse:",
-        max_tokens=150,
-        temperature=0.7
+        messages=[
+            {"role": "system", "content": GENERATE_MIMICRY_PROMPT},
+            {"role": "user", "content": f"Author's sample: {author_text}"},
+            {"role": "user", "content": f"Question to respond to: {question}"}
+        ]
     )
-    generated_text = response.choices[0].text.strip()
+    generated_text = response.choices[0].message['content']
     return generated_text
 
 def extract_topic(text):
-    response = client.Completion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        prompt=f"Extract a general topic from the given text in 5 words or less.\n\nText: {text}\nTopic:",
-        max_tokens=10,
-        temperature=0.5
+        messages=[
+            {"role": "system", "content": "Extract a general topic from the given text in 5 words or less."},
+            {"role": "user", "content": f"Extract the main topic from this text, be thorough: {text}"}
+        ]
     )
-    topic = response.choices[0].text.strip()
+    topic = response.choices[0].message['content']
     return topic
 
 def generate_text_on_topic(topic, token_count):
-    response = client.Completion.create(
-        model="gpt-3.5-turbo",
-        prompt=f"{GENERATE_TEXT_PROMPT}\n\nTopic: {topic}\n\nWrite about this topic:",
-        max_tokens=token_count,
-        temperature=0.7
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": GENERATE_TEXT_PROMPT},
+            {"role": "user", "content": f"Write about {topic} for approximately {token_count} tokens."}
+        ]
     )
-    generated_text = response.choices[0].text.strip()
+    generated_text = response.choices[0].message['content']
     return generated_text
 
 def remove_delimiters(text):
@@ -149,8 +153,8 @@ if __name__ == "__main__":
     max_samples_per_author = 2
 
     for input_csv in input_csvs:
-        output_mimicry_csv = f'mimicry_samples_GPT3_{input_csv.split(".")[0]}.csv'
-        output_topic_csv = f'topic_based_samples_GPT3_{input_csv.split(".")[0]}.csv'
+        output_mimicry_csv = f'mimicry_samples_GPT3{input_csv.split(".")[0]}.csv'
+        output_topic_csv = f'topic_based_samples_GPT3{input_csv.split(".")[0]}.csv'
         logging.info(f"Starting the processing for {input_csv}...")
         process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples_per_author)
         logging.info(f"Processing completed for {input_csv}. Outputs saved to {output_mimicry_csv} and {output_topic_csv}.")
