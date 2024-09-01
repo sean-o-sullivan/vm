@@ -72,7 +72,7 @@ def extract_topic(text):
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "Extract a general topic from the given text in 5 words or less."},
-            {"role": "user", "content": f"Extract the main topic from this text: {text[:500]}"}
+            {"role": "user", "content": f"Extract the main topic from this text, be thorough: {text}"}
         ]
     )
     topic = response['choices'][0]['message']['content']
@@ -103,9 +103,13 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
 
     logging.info(f"Total samples to process: {len(df)}")
 
-    mimicry_results = []
-    topic_results = []
     author_sample_count = defaultdict(int)
+
+    # Create the output CSV files with headers if they don't exist
+    if not os.path.exists(output_mimicry_csv):
+        pd.DataFrame(columns=["author", "original_text", "past_example", "generated_question", "generated_mimicry"]).to_csv(output_mimicry_csv, index=False)
+    if not os.path.exists(output_topic_csv):
+        pd.DataFrame(columns=["author", "original_text", "extracted_topic", "original_token_count", "generated_text", "generated_token_count"]).to_csv(output_topic_csv, index=False)
 
     for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing samples"):
         author = row['author']
@@ -119,31 +123,31 @@ def process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples
         question = create_question_for_gpt(cleaned_sample)
         mimicry_sample = generate_mimicry(cleaned_sample, question)
 
-        mimicry_results.append({
+        mimicry_result = {
             "author": author,
-            "original_text": cleaned_sample[:500],
-            "past_example": cleaned_sample[:500],
+            "original_text": cleaned_sample,
+            "past_example": cleaned_sample,
             "generated_question": question,
-            "generated_mimicry": mimicry_sample[:500]
-        })
+            "generated_mimicry": mimicry_sample
+        }
+
+        # Generate topic-based sample
         topic = extract_topic(cleaned_sample)
         topic_based_sample = generate_text_on_topic(topic, original_token_count)
 
-        topic_results.append({
+        topic_result = {
             "author": author,
-            "original_text": cleaned_sample[:500],
+            "original_text": cleaned_sample,
             "extracted_topic": topic,
             "original_token_count": original_token_count,
-            "generated_text": topic_based_sample[:500],
+            "generated_text": topic_based_sample,
             "generated_token_count": count_tokens(topic_based_sample)
-        })
+        }
+        pd.DataFrame([mimicry_result]).to_csv(output_mimicry_csv, mode='a', header=False, index=False)
+        pd.DataFrame([topic_result]).to_csv(output_topic_csv, mode='a', header=False, index=False)
         author_sample_count[author] += 1
 
-    mimicry_df = pd.DataFrame(mimicry_results)
-    mimicry_df.to_csv(output_mimicry_csv, index=False)
     logging.info(f"Mimicry samples saved to: {output_mimicry_csv}")
-    topic_df = pd.DataFrame(topic_results)
-    topic_df.to_csv(output_topic_csv, index=False)
     logging.info(f"Topic-based samples saved to: {output_topic_csv}")
 
 if __name__ == "__main__":
