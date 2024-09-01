@@ -166,7 +166,6 @@ def train_epoch(siamese_model, classifier_model, dataloader, triplet_criterion, 
 
 
 
-
 def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce_criterion, device):
     siamese_model.eval()
     classifier_model.eval()
@@ -187,20 +186,26 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
             loss = triplet_loss + bce_loss
             running_loss += loss.item()
             
-            predictions = (classifier_out > 0).float()
+            predictions = (torch.sigmoid(classifier_out) > 0.5).float()
             all_predictions.extend(predictions.cpu().numpy())
-            print(f"predictions are {all_predictions}")
             
+            # For triplet loss, we assume the anchor-positive pair should be classified as 1
+            # and the anchor-negative pair should be classified as 0
             all_labels.extend([1] * len(predictions))
+            all_labels.extend([0] * len(predictions))
+            all_predictions.extend((torch.sigmoid(classifier_out) <= 0.5).float().cpu().numpy())
             
             print(f'Validation {i}/{total_batches}', end='\r')
+    
+    all_predictions = np.array(all_predictions)
+    all_labels = np.array(all_labels)
     
     overall_accuracy = accuracy_score(all_labels, all_predictions)
     precision = precision_score(all_labels, all_predictions, zero_division=0)
     recall = recall_score(all_labels, all_predictions, zero_division=0)
     f1 = f1_score(all_labels, all_predictions, zero_division=0)
     mcc = matthews_corrcoef(all_labels, all_predictions)
-    # cm = confusion_matrix(all_labels, all_predictions)
+    cm = confusion_matrix(all_labels, all_predictions)
     
     if cm.shape[0] > 1:  
         label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
@@ -210,6 +215,10 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
         label_1_accuracy = 0  
     
     return running_loss / total_batches, overall_accuracy, label_0_accuracy, label_1_accuracy, precision, recall, f1, mcc
+
+
+
+
 
 # Training loop
 print("Starting Training!")
