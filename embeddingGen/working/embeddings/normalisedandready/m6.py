@@ -144,6 +144,7 @@ def evaluate(siamese_model, dataloader, triplet_criterion, device):
     
     # Make predictions based on the best threshold
     predictions = (all_distances < best_threshold).astype(int)
+    all_labels = np.concatenate([np.ones_like(all_distances_pos), np.zeros_like(all_distances_neg)])
     
     try:
         accuracy = accuracy_score(all_labels, predictions)
