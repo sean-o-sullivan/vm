@@ -8,23 +8,31 @@ from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-def process_csv(input_file, output_file_70, output_file_30):
-    author_texts = {}
-    with open(input_file, 'r', newline='', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            author = row['author']
-            if author not in author_texts:
-                author_texts[author] = []
-            author_texts[author].append(row)
+# def process_csv(input_file, output_file_70, output_file_30):
+#     # Read the CSV file and group texts by author
+#     author_texts = {}
+#     with open(input_file, 'r', newline='', encoding='utf-8') as csvfile:
+#         reader = csv.DictReader(csvfile)
+#         for row in reader:
+#             author = row['author']
+#             if author not in author_texts:
+#                 author_texts[author] = []
+#             author_texts[author].append(row)
 
-    authors = list(author_texts.keys())
-    random.shuffle(authors)
-    split_point = int(len(authors) * 0.7)
-    authors_70 = authors[:split_point]
-    authors_30 = authors[split_point:]
-    write_output(output_file_70, author_texts, authors_70)
-    write_output(output_file_30, author_texts, authors_30)
+#     # Get the list of authors and shuffle it
+#     authors = list(author_texts.keys())
+#     random.shuffle(authors)
+
+#     # Calculate the split point
+#     split_point = int(len(authors) * 0.7)
+
+#     # Split authors into two groups
+#     authors_70 = authors[:split_point]
+#     authors_30 = authors[split_point:]
+
+#     # Write to output files
+#     write_output(output_file_70, author_texts, authors_70)
+#     write_output(output_file_30, author_texts, authors_30)
     
 
 def write_output(output_file, author_texts, authors):
@@ -38,7 +46,7 @@ def write_output(output_file, author_texts, authors):
 
 def process_entry(row, expected_keys, key_counts):
     author = row['author']
-    book_name = row.get('book', '')
+    # book_name = row.get('book', '')
     sample_id = row.get('sample_id', '')
     processed_sample = row['cleaned_text']
     
@@ -61,7 +69,7 @@ def process_entry(row, expected_keys, key_counts):
             key_counts[key] += 1
             new_row = {
             'author': author,
-            'book': book_name,
+            # 'book': book_name,
             'sample_id': sample_id
         }
         new_row.update(embedding)
