@@ -8,6 +8,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, matthews_corrcoef
 import os
 import random
+import torch.nn.functional as F
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 
@@ -60,10 +61,10 @@ class EnhancedEmbeddingNet(nn.Module):
 
     def forward(self, x):
         x = self.input_proj(x)
-        x = x.unsqueeze(1)  # Add sequence dimension
+        x = x.unsqueeze(1)  # sequence dimension
         for layer in self.transformer_layers:
             x = layer(x)
-        x = x.squeeze(1)  # Remove sequence dimension
+        x = x.squeeze(1) 
         x = self.output_proj(x)
         x = self.layer_norm(x)
         return x
@@ -117,7 +118,6 @@ class TripletDataset(Dataset):
                 torch.tensor(positive_embedding, dtype=torch.float32),
                 torch.tensor(negative_embedding, dtype=torch.float32))
 
-# Hyperparameters
 input_size = 112
 d_model = 128
 nhead = 8
@@ -128,19 +128,16 @@ lr = 0.0001
 batch_size = 64
 num_epochs = 100
 
-# Initialize networks
 siamese_net = EnhancedSiameseNetwork(input_size, d_model, nhead, num_layers, dim_feedforward, dropout).to(device)
 classifier_net = EnhancedClassifierNet(d_model).to(device)
 
-# Optimizer and loss
 optimizer = optim.AdamW(list(siamese_net.parameters()) + list(classifier_net.parameters()), lr=lr, weight_decay=1e-5)
 triplet_criterion = nn.TripletMarginWithDistanceLoss(distance_function=lambda x, y: 1.0 - F.cosine_similarity(x, y))
 bce_criterion = nn.BCEWithLogitsLoss()
 
-# Load datasets
 current_dir = os.getcwd()
-train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_VTL20_C1_G_70.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_VTL20_C1_G_70_val.csv"))
+train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|_VTL5_C3.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|_VTL5_C3.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -204,7 +201,6 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
     
     return running_loss / total_batches, overall_accuracy, label_0_accuracy, label_1_accuracy, precision, recall, f1, mcc
 
-# Training loop
 print("Starting Training!")
 for epoch in range(num_epochs):
     print(f"Starting epoch {epoch+1}")
@@ -217,8 +213,6 @@ for epoch in range(num_epochs):
     print(f'Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Accuracy: {overall_accuracy:.4f}')
     print(f'Label 0 Accuracy: {label_0_accuracy:.4f}, Label 1 Accuracy: {label_1_accuracy:.4f}')
     print(f'Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}, MCC: {mcc:.4f}')
-
-    # Optionally, save the model
     if (epoch + 1) % 10 == 0:
         model_save_path = f"{current_dir}/siamese_model_epoch_{epoch+1}.pth"
         torch.save({
