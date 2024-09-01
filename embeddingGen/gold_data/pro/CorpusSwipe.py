@@ -66,12 +66,11 @@ def clean_text(text,useTable):
     text, n = re.subn(r'\[.*?\]', '', text)
     stats['square_brackets_removed'] += n
 
-    if (useTable==True):
-        # Table removal step
-        text, tables = remove_table_from_text(text, stats)
-        removed_tables.extend(tables)
-    else: 
-        continue
+
+#    if (useTable==True):
+ #       # Table removal step
+  #      text, tables = remove_table_from_text(text, stats)
+   #     removed_tables.extend(tables)
 
     text, n = re.subn(r'\{.*?\}', '', text)
     stats['curly_braces_removed'] += n
@@ -158,36 +157,45 @@ def clean_text(text,useTable):
 
 
 def process_and_compare(gutenberg_filename, bawe_filename):
-    
-    gutenberg_df = pd.read_csv(gutenberg_filename)
+    # Load the CSV files
+#    gutenberg_df = pd.read_csv(gutenberg_filename)
     bawe_df = pd.read_csv(bawe_filename)
-    gutenberg_df['cleaned_text'] = ""
+
+    # Initialize new columns
+ #   gutenberg_df['cleaned_text'] = ""
     bawe_df['cleaned_text'] = ""
-    gutenberg_stats = Counter()
+
+    # Initialize counters for overall statistics
+  #  gutenberg_stats = Counter()
     bawe_stats = Counter()
     all_tables = []
-    print("\nCleaning Gutenberg Data:\n")
-    for i in tqdm(range(len(gutenberg_df)), desc="Gutenberg"):
-        cleaned_text, stats, removed_tables = clean_text(gutenberg_df.at[i, 'text'], useTable=True)
-        gutenberg_df.at[i, 'cleaned_text'] = cleaned_text
-        gutenberg_stats += stats
-        if removed_tables:
-            for table in removed_tables:
-                all_tables.append({
-                    'source': 'Gutenberg',
-                    'custom_id': gutenberg_df.at[i, 'custom_id'],
-                    'author': gutenberg_df.at[i, 'author'],
-                    'table_content': table
-                })
 
-        if i % 100 == 0 or i == len(gutenberg_df) - 1:
-            gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
-            save_stats_to_csv(gutenberg_stats, '4493_FromGutenberg_stats.csv')
+    # Process Gutenberg data
+   # print("\nCleaning Gutenberg Data:\n")
+  #  for i in tqdm(range(len(gutenberg_df)), desc="Gutenberg"):
+   #     cleaned_text, stats, removed_tables = clean_text(gutenberg_df.at[i, 'text'], useTable=True)
+  #      gutenberg_df.at[i, 'cleaned_text'] = cleaned_text
+ #       gutenberg_stats += stats
+#
+        # Add extracted tables to the overall list
+       # if removed_tables:
+      #      for table in removed_tables:
+     #           all_tables.append({
+    #                'source': 'Gutenberg',
+   #                 'custom_id': gutenberg_df.at[i, 'custom_id'],
+  #                  'author': gutenberg_df.at[i, 'author'],
+ #                   'table_content': table
+#                })
+
+        # Save progress and stats every 100 samples
+      #  if i % 100 == 0 or i == len(gutenberg_df) - 1:
+     #       gutenberg_df[['custom_id', 'author', 'cleaned_text']].to_csv('4493_FromGutenberg_cleaned.csv', index=False)
+    #        save_stats_to_csv(gutenberg_stats, '4493_FromGutenberg_stats.csv')
 
     
     print("\nCleaning this BAWE Data:\n")
     for i in tqdm(range(len(bawe_df)), desc="BAWE"):
-        cleaned_text, stats, removed_tables = clean_text(bawe_df.at[i, 'text'], useTable=False)
+        cleaned_text, stats, removed_tables = clean_text(bawe_df.at[i, 'cleaned_text'], useTable=True)
         bawe_df.at[i, 'cleaned_text'] = cleaned_text
         bawe_stats += stats
 
@@ -202,12 +210,14 @@ def process_and_compare(gutenberg_filename, bawe_filename):
 
         # Save progress and stats every 100 samples
         if i % 100 == 0 or i == len(bawe_df) - 1:
-            bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned.csv', index=False)
+            bawe_df[['author', 'cleaned_text']].to_csv('BAWE_raw_cleaned2.csv', index=False)
             save_stats_to_csv(bawe_stats, 'BAWE_raw_stats.csv')
 
     save_all_tables_to_csv(all_tables, 'extracted_tables_stats.csv')
-    print("\nGutenberg Data Cleaning Sample:\n")
-    print_sample_comparisons(gutenberg_df, 5)
+
+    # Print sample of original and cleaned text for comparison
+#    print("\nGutenberg Data Cleaning Sample:\n")
+ #   print_sample_comparisons(gutenberg_df, 5)
 
     print("\nBAWE Data Cleaning Sample:\n")
     print_sample_comparisons(bawe_df, 5)
@@ -237,5 +247,6 @@ def print_sample_comparisons(df, sample_size):
         print("-" * 80)
         
 gutenberg_file = '4493_FromGutenberg.csv'
-bawe_file = 'BAWE_raw.csv'
+bawe_file = 'BAWE_raw_cleaned.csv'
+
 process_and_compare(gutenberg_file, bawe_file)
