@@ -1,0 +1,22 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+file1 = pd.read_csv('file1.csv')
+file2 = pd.read_csv('file2.csv')
+file3 = pd.read_csv('file3.csv')
+file4 = pd.read_csv('file4.csv')
+combined_df = pd.concat([file1, file2, file3, file4])
+numeric_columns = combined_df.select_dtypes(include='number').columns
+zscore_df = combined_df.copy()
+zscore_df[numeric_columns] = zscore_df[numeric_columns].apply(lambda x: (x - x.mean()) / x.std(), axis=0)
+
+plt.figure(figsize=(12, 8))
+
+for col in numeric_columns:
+    plt.hist(zscore_df[col], bins=100, alpha=0.3, label=col, edgecolor='none')
+
+plt.title('Compounded Fnial Matrix Graph of Z-Score Distributions Across All Features')
+plt.xlabel('Z-Score Value')
+plt.ylabel('Frequency')
+plt.grid(True)
+plt.show()
