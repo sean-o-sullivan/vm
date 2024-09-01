@@ -21,8 +21,8 @@ def calculate_statistics(combined_df):
         stats_dict[col] = {
             'mean': mean,
             'std': std,
-            'percentile_95': np.percentile(data, 95),
-            'percentile_5': np.percentile(data, 5),
+            'percentile_99': np.percentile(data, 99),
+            'percentile_1': np.percentile(data, 1),
             'all_zeros': np.all(data == 0),
             'cv': cv,
             'kurtosis': stats.kurtosis(data),
@@ -86,40 +86,6 @@ def visualize_features(combined_df, stats_data, output_file, dpi=300, discrimina
 
     return stats_data
 
-# def print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5):
-#     print("\nFeature Statistics and Suggestions:")
-#     print("===================================")
-    
-#     features_to_omit = []
-    
-#     for col in stats_data.index:
-#         cv = stats_data.at[col, 'cv']
-#         kurtosis = stats_data.at[col, 'kurtosis']
-#         skewness = stats_data.at[col, 'skewness']
-#         all_zeros = stats_data.at[col, 'all_zeros']
-        
-#         discriminative_score = calculate_discriminative_score(cv, kurtosis, skewness)
-        
-#         print(f"\nFeature: {col}")
-#         print(f"  CV: {cv:.4f}")
-#         print(f"  Kurtosis: {kurtosis:.4f}")
-#         print(f"  Skewness: {skewness:.4f}")
-#         print(f"  Discriminative Score: {discriminative_score:.4f}")
-        
-#         if all_zeros:
-#             print("  Status: ALL ZEROS")
-#             features_to_omit.append(col)
-#         elif discriminative_score <= discriminative_threshold:
-#             print("  Status: Not Discriminative")
-#             features_to_omit.append(col)
-#         else:
-#             print("  Status: Discriminative")
-    
-#     print("\nSuggested features to omit:")
-#     print(features_teo_omit)
-    
-#     return features_to_omit
-
 def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_omit, output_dir):
     raw_embedding = pd.read_csv(csv_of_embeddings)
     
@@ -135,16 +101,24 @@ def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_o
         if col not in ['embedding_id', 'author_id'] and col in stats_data.index and col not in features_to_omit:
             mean = stats_data.at[col, 'mean']
             std = stats_data.at[col, 'std']
-            percentile_95 = stats_data.at[col, 'percentile_95']
-            percentile_5 = stats_data.at[col, 'percentile_5']
+            percentile_99 = stats_data.at[col, 'percentile_99']
+            percentile_1 = stats_data.at[col, 'percentile_1']
             
             if std != 0:
-                zscore = (raw_embedding[col] - mean) / std
+                z_scores = (raw_embedding[col] - mean) / std
+                
+                # Calculate z-scores for 1st and 99th percentiles
+                z_score_1 = (percentile_1 - mean) / std
+                z_score_99 = (percentile_99 - mean) / std
+                
+                # Linear mapping of z-scores to [0, 1] range
+                normalized_value = (z_scores - z_score_1) / (z_score_99 - z_score_1)
+                
+                # Ensure values outside the 1st and 99th percentiles are not clipped
+                normalized_embedding[col] = normalized_value
             else:
-                zscore = 0
-            
-            normalized_value = (zscore - (percentile_5 - mean) / std) / ((percentile_95 - mean) / std - (percentile_5 - mean) / std)
-            normalized_embedding[col] = np.clip(normalized_value, 0, 1)
+                # If std is 0, set all values to 0.5
+                normalized_embedding[col] = 0.5
     
     os.makedirs(output_dir, exist_ok=True)
     
@@ -165,10 +139,7 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
     - features_to_omit: List of features to exclude from normalization
     - output_dir: Directory to save the normalized CSV
     """
-    # Load the statistics
     stats_data = pd.read_csv(stats_data_path, index_col=0)
-    
-    # Normalize the embedding
     normalize_and_filter_embeddings(csv_path, stats_data, features_to_omit, output_dir)
 
 def main():
@@ -182,14 +153,11 @@ def main():
     combined_df = load_and_combine_data(file_paths)
     stats_data = calculate_statistics(combined_df)
     stats_data.to_csv('embedding_stats.csv', index=True)
-
     stats_data = visualize_features(combined_df, stats_data, 'feature_distributionsF.png', dpi=300, discriminative_threshold=0.5)
-    #suggested_features_to_omit = print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5)
-    
     output_dir = 'normalisedandready'
     features_to_omit = [
-    "ratio_of_sentence_initial_conjunctions",
-    "normalized_assonance"
+        "ratio_of_sentence_initial_conjunctions",
+        "normalized_assonance"
     ]
     
     for csv_file in file_paths:
@@ -197,3 +165,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# normalize_future_csv('new_embedding.csv', 'embedding_stats.csv', features_to_omit, 'normalized_output')
