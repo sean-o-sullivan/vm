@@ -10,29 +10,6 @@ def load_and_combine_data(file_paths):
     dataframes = [pd.read_csv(file_path) for file_path in file_paths]
     return pd.concat(dataframes, ignore_index=True)
 
-def calculate_statistics(combined_df):
-    numeric_columns = combined_df.select_dtypes(include='number').columns
-    numeric_columns = [col for col in numeric_columns if col != 'embedding_id']
-    stats_dict = {}
-
-    for col in numeric_columns:
-        data = combined_df[col]
-        mean = data.mean()
-        std = data.std()
-        cv = std / mean if mean != 0 else 0
-        stats_dict[col] = {
-            'mean': mean,
-            'std': std,
-            'percentile_99': np.percentile(data, 99),
-            'percentile_1': np.percentile(data, 1),
-            'all_zeros': np.all(data == 0),
-            'cv': cv,
-            'kurtosis': stats.kurtosis(data),
-            'skewness': stats.skew(data)
-        }
-
-    return pd.DataFrame(stats_dict).T
-
 def calculate_discriminative_score(cv, kurtosis, skewness):
     return (np.abs(cv) + np.abs(kurtosis) + np.abs(skewness)) / 3
 
@@ -88,6 +65,31 @@ def visualize_features(combined_df, stats_data, output_file, dpi=300, discrimina
 
     return stats_data
 
+
+
+def calculate_statistics(combined_df):
+    numeric_columns = combined_df.select_dtypes(include='number').columns
+    numeric_columns = [col for col in numeric_columns if col != 'embedding_id']
+    stats_dict = {}
+
+    for col in numeric_columns:
+        data = combined_df[col]
+        mean = data.mean()
+        std = data.std()
+        cv = std / mean if mean != 0 else 0
+        stats_dict[col] = {
+            'mean': mean,
+            'std': std,
+            'percentile_99.5': np.percentile(data, 99.5),
+            'percentile_0.5': np.percentile(data, 0.5),
+            'all_zeros': np.all(data == 0),
+            'cv': cv,
+            'kurtosis': stats.kurtosis(data),
+            'skewness': stats.skew(data)
+        }
+
+    return pd.DataFrame(stats_dict).T
+
 def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_omit, output_dir):
     raw_embedding = pd.read_csv(csv_of_embeddings)
     
@@ -101,21 +103,21 @@ def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_o
         if col not in ['embedding_id', 'author_id'] and col in stats_data.index and col not in features_to_omit:
             mean = stats_data.at[col, 'mean']
             std = stats_data.at[col, 'std']
-            percentile_99 = stats_data.at[col, 'percentile_99']
-            percentile_1 = stats_data.at[col, 'percentile_1']
+            percentile_99_5 = stats_data.at[col, 'percentile_99.5']
+            percentile_0_5 = stats_data.at[col, 'percentile_0.5']
             
             if std != 0:
                 z_scores = (raw_embedding[col] - mean) / std
                 
-                # Calculate z-scores for 1st and 99th percentiles
-                z_score_1 = (percentile_1 - mean) / std
-                z_score_99 = (percentile_99 - mean) / std
+                # Calculate z-scores for 0.5th and 99.5th percentiles
+                z_score_0_5 = (percentile_0_5 - mean) / std
+                z_score_99_5 = (percentile_99_5 - mean) / std
                 
                 # Linear mapping of z-scores to [0, 1] range
-                normalized_value = (z_scores - z_score_1) / (z_score_99 - z_score_1)
+                normalized_value = (z_scores - z_score_0_5) / (z_score_99_5 - z_score_0_5)
                 
-                # Ensure values outside the 1st and 99th percentiles are not clipped
-                normalized_embedding[col] = normalized_value
+                # Clip values to ensure they are between 0 and 1
+                normalized_embedding[col] = np.clip(normalized_value, 0, 1)
             else:
                 # If std is 0, set all values to 0.5
                 normalized_embedding[col] = 0.5
@@ -128,6 +130,9 @@ def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_o
     normalized_embedding.to_csv(output_file_path, index=False)
     
     print(f"Normalized embedding saved to: {output_file_path}")
+
+
+
 
 def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir):
     """
