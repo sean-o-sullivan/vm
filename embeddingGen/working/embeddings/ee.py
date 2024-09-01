@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 import os
+import seaborn as sns
+
 
 def load_and_combine_data(file_paths):
     dataframes = [pd.read_csv(file_path) for file_path in file_paths]
@@ -90,8 +92,6 @@ def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_o
     raw_embedding = pd.read_csv(csv_of_embeddings)
     
     normalized_embedding = pd.DataFrame()
-    
-    # Keep both embedding_id and author_id
     if 'embedding_id' in raw_embedding.columns:
         normalized_embedding['embedding_id'] = raw_embedding['embedding_id']
     if 'author_id' in raw_embedding.columns:
@@ -144,39 +144,23 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
 
 
 def visualize_normalized_data(normalized_file_paths, output_file, dpi=300):
-    # Load all normalized data
     normalized_dfs = [pd.read_csv(file_path) for file_path in normalized_file_paths]
-    
-    # Combine all dataframes
     combined_df = pd.concat(normalized_dfs, ignore_index=True)
-    
-    # Get feature columns (exclude 'embedding_id' and 'author_id' if present)
     feature_columns = [col for col in combined_df.columns if col not in ['embedding_id', 'author_id']]
-    
-    # Calculate number of rows and columns for subplots
     n_features = len(feature_columns)
     n_cols = 5
     n_rows = (n_features - 1) // n_cols + 1
-
-    # Create subplots
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, 4*n_rows))
     fig.suptitle("Distribution of Normalized Features", fontsize=16, y=1.02)
-
-    # Plot each feature
     for idx, feature in enumerate(feature_columns):
         ax = axes[idx // n_cols, idx % n_cols]
-        
-        # Create violin plot
         sns.violinplot(data=combined_df[feature], ax=ax)
         
         ax.set_title(feature)
-        ax.set_ylim(-0.1, 1.1)  # Set y-axis limits to show full range including potential outliers
+        ax.set_ylim(-0.1, 1.1)  
         ax.set_ylabel("Normalized Value")
-        
-        # Remove x-axis labels as they're not needed for single-feature violin plots
         ax.set_xticks([])
 
-    # Remove any unused subplots
     for idx in range(n_features, n_rows * n_cols):
         fig.delaxes(axes[idx // n_cols, idx % n_cols])
 
