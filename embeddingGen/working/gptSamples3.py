@@ -151,8 +151,8 @@ if __name__ == "__main__":
     max_samples_per_author = 2
 
     for input_csv in input_csvs:
-        output_mimicry_csv = f'mimicry_samples_{input_csv.split(".")[0]}.csv'
-        output_topic_csv = f'topic_based_samples_{input_csv.split(".")[0]}.csv'
+        output_mimicry_csv = f'mimicry_samples_GPT3{input_csv.split(".")[0]}.csv'
+        output_topic_csv = f'topic_based_samples_GPT3{input_csv.split(".")[0]}.csv'
         logging.info(f"Starting the processing for {input_csv}...")
         process_samples(input_csv, output_mimicry_csv, output_topic_csv, max_samples_per_author)
         logging.info(f"Processing completed for {input_csv}. Outputs saved to {output_mimicry_csv} and {output_topic_csv}.")
