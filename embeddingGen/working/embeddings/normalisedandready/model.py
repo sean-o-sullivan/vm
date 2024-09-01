@@ -25,7 +25,7 @@ set_seed(42)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class FeatureAwareTransformerLayer(nn.Module):
-    def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1):
+    def __init__(self, d_model, nhead, dim_feedforward=512, dropout=0.1):
         super(FeatureAwareTransformerLayer, self).__init__()
         self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
         self.linear1 = nn.Linear(d_model, dim_feedforward)
@@ -49,7 +49,7 @@ class FeatureAwareTransformerLayer(nn.Module):
         return src
 
 class EnhancedEmbeddingNet(nn.Module):
-    def __init__(self, input_size, d_model=128, nhead=8, num_layers=6, dim_feedforward=512, dropout=0.1):
+    def __init__(self, input_size, d_model=128, nhead=4, num_layers=2, dim_feedforward=512, dropout=0.1):
         super(EnhancedEmbeddingNet, self).__init__()
         self.input_proj = nn.Linear(input_size, d_model)
         self.transformer_layers = nn.ModuleList([
@@ -141,8 +141,8 @@ triplet_criterion = nn.TripletMarginWithDistanceLoss(distance_function=lambda x,
 bce_criterion = nn.BCEWithLogitsLoss()
 
 current_dir = os.getcwd()
-train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|_VTL5_C3.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|_VTL5_C3.csv"))
+train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_B_70_|_VTL5_C3.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_B_30_|_VTL5_C3.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -202,8 +202,8 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
             running_loss += loss.item()
             
             # Sigmoid outputs for predictions
-            predictions_positive = (torch.sigmoid(positive_classifier_out) > 0.5).float().cpu().numpy()
-            predictions_negative = (torch.sigmoid(negative_classifier_out) <= 0.5).float().cpu().numpy()
+            predictions_positive = (torch.sigmoid(positive_classifier_out) > 0.9).float().cpu().numpy()
+            predictions_negative = (torch.sigmoid(negative_classifier_out) <= 0.9).float().cpu().numpy()
             
             all_predictions.extend(predictions_positive)
             all_labels.extend(np.ones_like(predictions_positive))
