@@ -25,4 +25,5 @@ for i, col in enumerate(filtered_columns, start=1):
     plt.grid(True)
 
 plt.tight_layout()
+plt.savefig('zscore_distributions.png', dpi=300, bbox_inches='tight')
 plt.show()
