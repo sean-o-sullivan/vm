@@ -164,6 +164,9 @@ def train_epoch(siamese_model, classifier_model, dataloader, triplet_criterion, 
         print(f'Training {i}/{total_batches}', end='\r')
     return running_loss / total_batches
 
+
+
+
 def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce_criterion, device):
     siamese_model.eval()
     classifier_model.eval()
@@ -186,21 +189,29 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
             
             predictions = (classifier_out > 0).float()
             all_predictions.extend(predictions.cpu().numpy())
+            print(f"predictions are {all_predictions}")
+            
             all_labels.extend([1] * len(predictions))
             
             print(f'Validation {i}/{total_batches}', end='\r')
     
     overall_accuracy = accuracy_score(all_labels, all_predictions)
-    precision = precision_score(all_labels, all_predictions)
-    recall = recall_score(all_labels, all_predictions)
-    f1 = f1_score(all_labels, all_predictions)
+    precision = precision_score(all_labels, all_predictions, zero_division=0)
+    recall = recall_score(all_labels, all_predictions, zero_division=0)
+    f1 = f1_score(all_labels, all_predictions, zero_division=0)
     mcc = matthews_corrcoef(all_labels, all_predictions)
-    cm = confusion_matrix(all_labels, all_predictions)
-    label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
-    label_1_accuracy = cm[1][1] / cm[1].sum() if cm[1].sum() > 0 else 0
+    # cm = confusion_matrix(all_labels, all_predictions)
+    
+    if cm.shape[0] > 1:  
+        label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
+        label_1_accuracy = cm[1][1] / cm[1].sum() if cm[1].sum() > 0 else 0
+    else: 
+        label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
+        label_1_accuracy = 0  
     
     return running_loss / total_batches, overall_accuracy, label_0_accuracy, label_1_accuracy, precision, recall, f1, mcc
 
+# Training loop
 print("Starting Training!")
 for epoch in range(num_epochs):
     print(f"Starting epoch {epoch+1}")
