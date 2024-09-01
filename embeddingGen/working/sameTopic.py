@@ -19,12 +19,10 @@ Your goal is to produce engaging and informative content on the provided topic.
 """
 
 def count_tokens(text):
-    """Count the number of tokens in the given text."""
     encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
     return len(encoding.encode(text))
 
 def extract_topic(text):
-    """Extract a general topic from the given text."""
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -36,7 +34,6 @@ def extract_topic(text):
     return topic
 
 def generate_text_on_topic(topic, token_count):
-    """Generate text on the given topic with approximately the specified token count."""
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -48,11 +45,9 @@ def generate_text_on_topic(topic, token_count):
     return generated_text
 
 def remove_delimiters(text):
-    """Removes custom text delimiters from the processed sample."""
     return text.replace("#/#\\#|||#/#\\#|||#/#\\#", "")
 
 def process_samples(input_csv, output_csv):
-    """Processes samples from the CSV and generates new text on extracted topics."""
     logging.info(f"Loading dataset from: {input_csv}")
     
     # Load the CSV file
