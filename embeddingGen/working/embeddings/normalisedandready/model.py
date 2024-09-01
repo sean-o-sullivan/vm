@@ -100,7 +100,9 @@ class EnhancedClassifierNet(nn.Module):
     
     def forward(self, anchor, positive, negative):
         x = torch.cat((anchor, positive, negative), dim=1)
-        return self.fc(x)
+        return self.fc(x).squeeze(-1)
+
+
 
 class TripletDataset(Dataset):
     def __init__(self, csv_file):
@@ -154,24 +156,26 @@ def train_epoch(siamese_model, classifier_model, dataloader, triplet_criterion, 
         anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
         triplet_loss = triplet_criterion(anchor_out, positive_out, negative_out)
         
-        classifier_out = classifier_model(anchor_out, positive_out, negative_out)
-        bce_loss = bce_criterion(classifier_out, torch.ones_like(classifier_out))
+        positive_classifier_out = classifier_model(anchor_out, positive_out, negative_out)
+        negative_classifier_out = classifier_model(anchor_out, negative_out, positive_out)
         
-        loss = triplet_loss + bce_loss
+        bce_loss_positive = bce_criterion(positive_classifier_out, torch.ones_like(positive_classifier_out))
+        bce_loss_negative = bce_criterion(negative_classifier_out, torch.zeros_like(negative_classifier_out))
+        
+        loss = triplet_loss + bce_loss_positive + bce_loss_negative
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
         print(f'Training {i}/{total_batches}', end='\r')
     return running_loss / total_batches
-
-
+    
 
 def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce_criterion, device):
     siamese_model.eval()
     classifier_model.eval()
     running_loss = 0.0
-    all_predictions = []
-    all_labels = []
+    all_predictions_positive = []
+    all_predictions_negative = []
     total_batches = len(dataloader)
     with torch.no_grad():
         for i, (anchor, positive, negative) in enumerate(dataloader, start=1):
@@ -180,25 +184,25 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
             anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
             triplet_loss = triplet_criterion(anchor_out, positive_out, negative_out)
             
-            classifier_out = classifier_model(anchor_out, positive_out, negative_out)
-            bce_loss = bce_criterion(classifier_out, torch.ones_like(classifier_out))
+            positive_classifier_out = classifier_model(anchor_out, positive_out, negative_out)
+            negative_classifier_out = classifier_model(anchor_out, negative_out, positive_out)
             
-            loss = triplet_loss + bce_loss
+            bce_loss_positive = bce_criterion(positive_classifier_out, torch.ones_like(positive_classifier_out))
+            bce_loss_negative = bce_criterion(negative_classifier_out, torch.zeros_like(negative_classifier_out))
+            
+            loss = triplet_loss + bce_loss_positive + bce_loss_negative
             running_loss += loss.item()
             
-            predictions = (torch.sigmoid(classifier_out) > 0.5).float()
-            all_predictions.extend(predictions.cpu().numpy())
+            predictions_positive = (torch.sigmoid(positive_classifier_out) > 0.5).float()
+            predictions_negative = (torch.sigmoid(negative_classifier_out) > 0.5).float()
             
-            # For triplet loss, we assume the anchor-positive pair should be classified as 1
-            # and the anchor-negative pair should be classified as 0
-            all_labels.extend([1] * len(predictions))
-            all_labels.extend([0] * len(predictions))
-            all_predictions.extend((torch.sigmoid(classifier_out) <= 0.5).float().cpu().numpy())
+            all_predictions_positive.extend(predictions_positive.cpu().numpy())
+            all_predictions_negative.extend(predictions_negative.cpu().numpy())
             
             print(f'Validation {i}/{total_batches}', end='\r')
     
-    all_predictions = np.array(all_predictions)
-    all_labels = np.array(all_labels)
+    all_predictions = np.concatenate([all_predictions_positive, all_predictions_negative])
+    all_labels = np.concatenate([np.ones_like(all_predictions_positive), np.zeros_like(all_predictions_negative)])
     
     overall_accuracy = accuracy_score(all_labels, all_predictions)
     precision = precision_score(all_labels, all_predictions, zero_division=0)
@@ -207,15 +211,14 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
     mcc = matthews_corrcoef(all_labels, all_predictions)
     cm = confusion_matrix(all_labels, all_predictions)
     
-    if cm.shape[0] > 1:  
+    if cm.shape[0] > 1:
         label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
         label_1_accuracy = cm[1][1] / cm[1].sum() if cm[1].sum() > 0 else 0
-    else: 
+    else:
         label_0_accuracy = cm[0][0] / cm[0].sum() if cm[0].sum() > 0 else 0
-        label_1_accuracy = 0  
+        label_1_accuracy = 0
     
     return running_loss / total_batches, overall_accuracy, label_0_accuracy, label_1_accuracy, precision, recall, f1, mcc
-
 
 
 
@@ -233,6 +236,19 @@ for epoch in range(num_epochs):
     print(f'Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Accuracy: {overall_accuracy:.4f}')
     print(f'Label 0 Accuracy: {label_0_accuracy:.4f}, Label 1 Accuracy: {label_1_accuracy:.4f}')
     print(f'Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}, MCC: {mcc:.4f}')
+
+    # Debug prints
+    with torch.no_grad():
+        for i, (anchor, positive, negative) in enumerate(val_dataloader):
+            anchor, positive, negative = anchor.to(device), positive.to(device), negative.to(device)
+            anchor_out, positive_out, negative_out = siamese_net(anchor, positive, negative)
+            positive_classifier_out = classifier_net(anchor_out, positive_out, negative_out)
+            negative_classifier_out = classifier_net(anchor_out, negative_out, positive_out)
+            print(f"Positive outputs: {torch.sigmoid(positive_classifier_out[:5])}")
+            print(f"Negative outputs: {torch.sigmoid(negative_classifier_out[:5])}")
+            break
+
+    # Optionally, save the model
     if (epoch + 1) % 10 == 0:
         model_save_path = f"{current_dir}/siamese_model_epoch_{epoch+1}.pth"
         torch.save({
