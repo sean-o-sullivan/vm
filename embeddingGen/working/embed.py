@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 from tqdm import tqdm
 from embedding2 import generateEmbedding
+from collections import defaultdict
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
