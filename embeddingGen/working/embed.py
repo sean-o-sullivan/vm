@@ -108,8 +108,7 @@ Fergus's wife was a thoroughly dislikable, sharp-featured woman named Beryl. She
         if processed_row is not None:
             processed_rows.append(processed_row)
             counter += 1
-
-        if counter % 1000 == 0:
+        if counter % 20 == 0:
             temp_df = pd.DataFrame(processed_rows)
             temp_df.to_csv(output_file, index=False, mode='a', header=not pd.io.common.file_exists(output_file))
             processed_rows = []  
