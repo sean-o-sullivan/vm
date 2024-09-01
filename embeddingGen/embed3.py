@@ -11,8 +11,6 @@ def process_entry(row, embedding_columns):
     sample_id = row['sample_id']
     processed_sample = row['processed_sample']
 #    input(f"the processed sample is very much: {processed_sample}")
-    
-    # Remove the custom delimiters from the processed_sample
     processed_sample = processed_sample.replace("#/#\\#|||#/#\\#|||#/#\\#", "")
     
     print(f"Processing sample_id: {sample_id}")
@@ -21,14 +19,12 @@ def process_entry(row, embedding_columns):
     try:
         
         embedding = generateEmbedding(processed_sample)
-
         new_row = {
             'author': author,
             'book': book_name,
             'sample_id': sample_id
         }
-        new_row.update(embedding)  # Add all key-value pairs from the embedding dictionary
-
+        new_row.update(embedding) 
         return pd.Series(new_row)
     except Exception as e:
         logging.error(f"Error processing sample_id {sample_id}: {str(e)}")
@@ -37,13 +33,11 @@ def process_entry(row, embedding_columns):
 def main():
     input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/Thursday/results_10KSample.csv'
     output_file = 'output_embeddings_10KSample.csv'
-
     df = pd.read_csv(input_csv)
     
     if df.empty:
         logging.error("No entries found in results.csv. Exiting.")
         return
-
     print(f"CSV Headers: {df.columns.tolist()}")
     print(f"Total entries: {len(df)}")
 
@@ -52,10 +46,8 @@ def main():
     """
     sample_embedding = generateEmbedding(sample_text)
     embedding_columns = list(sample_embedding.keys())
-
     tqdm.pandas(desc="Processing entries")
     result_df = df.progress_apply(lambda row: process_entry(row, embedding_columns), axis=1)
-
     result_df = result_df.dropna()
     result_df.to_csv(output_file, index=False)
 
