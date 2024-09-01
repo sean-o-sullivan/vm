@@ -173,8 +173,6 @@ def train_epoch(siamese_model, classifier_model, dataloader, triplet_criterion, 
     return running_loss / total_batches
     
 
-
-
 def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce_criterion, device):
     siamese_model.eval()
     classifier_model.eval()
@@ -205,21 +203,22 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
             
             # Sigmoid outputs for predictions
             predictions_positive = (torch.sigmoid(positive_classifier_out) > 0.5).float().cpu().numpy()
-            predictions_negative = (torch.sigmoid(negative_classifier_out) > 0.5).float().cpu().numpy()
+            predictions_negative = (torch.sigmoid(negative_classifier_out) <= 0.5).float().cpu().numpy()
             
             all_predictions.extend(predictions_positive)
             all_labels.extend(np.ones_like(predictions_positive))
 
             all_predictions.extend(predictions_negative)
-            all_labels.extend(np.zeros_like(predictions_negative))  
+            all_labels.extend(np.zeros_like(predictions_negative)) 
+            print(f'Batch {i}/{total_batches}')
+            print(f'Positive Predictions: {predictions_positive[:5]}') 
+            print(f'Negative Predictions: {predictions_negative[:5]}')
 
             print(f'Validation {i}/{total_batches}', end='\r')
     
-    # Convert lists to numpy arrays
     all_predictions = np.array(all_predictions)
     all_labels = np.array(all_labels)
-    
-    # Calculate evaluation metrics
+
     overall_accuracy = accuracy_score(all_labels, all_predictions)
     precision = precision_score(all_labels, all_predictions, zero_division=0)
     recall = recall_score(all_labels, all_predictions, zero_division=0)
@@ -235,9 +234,6 @@ def evaluate(siamese_model, classifier_model, dataloader, triplet_criterion, bce
         label_1_accuracy = 0
     
     return running_loss / total_batches, overall_accuracy, label_0_accuracy, label_1_accuracy, precision, recall, f1, mcc
-
-
-
 
 
 # Training loop
