@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
+import os
 
 def load_and_combine_data(file_paths):
     dataframes = [pd.read_csv(file_path) for file_path in file_paths]
@@ -13,46 +14,34 @@ def calculate_statistics(combined_df):
     stats_dict = {}
 
     for col in numeric_columns:
+        data = combined_df[col]
+        mean = data.mean()
+        std = data.std()
+        cv = std / mean if mean != 0 else 0
         stats_dict[col] = {
-            'mean': combined_df[col].mean(),
-            'std': combined_df[col].std(),
-            'percentile_95': np.percentile(combined_df[col], 95),
-            'percentile_5': np.percentile(combined_df[col], 5),
-            'all_zeros': np.all(combined_df[col] == 0)
+            'mean': mean,
+            'std': std,
+            'percentile_95': np.percentile(data, 95),
+            'percentile_5': np.percentile(data, 5),
+            'all_zeros': np.all(data == 0),
+            'cv': cv,
+            'kurtosis': stats.kurtosis(data),
+            'skewness': stats.skew(data)
         }
 
     return pd.DataFrame(stats_dict).T
 
-def normalize_embedding(raw_embedding, stats_data):
-    normalized_embedding = {}
-    for col in raw_embedding.columns:
-        if col in stats_data.index and col != 'embedding_id':
-            mean = stats_data.at[col, 'mean']
-            std = stats_data.at[col, 'std']
-            percentile_95 = stats_data.at[col, 'percentile_95']
-            percentile_5 = stats_data.at[col, 'percentile_5']
-            
-            if std != 0:
-                zscore = (raw_embedding[col] - mean) / std
-            else:
-                zscore = 0
-            
-            normalized_value = (zscore - (percentile_5 - mean) / std) / ((percentile_95 - mean) / std - (percentile_5 - mean) / std)
-            normalized_value = np.clip(normalized_value, 0, 1)
-            
-            normalized_embedding[col] = normalized_value
-    
-    return pd.DataFrame(normalized_embedding)
+def calculate_discriminative_score(cv, kurtosis, skewness):
+    return (np.abs(cv) + np.abs(kurtosis) + np.abs(skewness)) / 3
 
-def visualize_features(combined_df, stats_data, output_file, dpi=300):
-    numeric_columns = combined_df.select_dtypes(include='number').columns
-    numeric_columns = [col for col in numeric_columns if col != 'embedding_id']
+def visualize_features(combined_df, stats_data, output_file, dpi=300, discriminative_threshold=0.5):
+    numeric_columns = [col for col in combined_df.columns if col != 'embedding_id' and pd.api.types.is_numeric_dtype(combined_df[col])]
     n_features = len(numeric_columns)
     n_cols = 5
     n_rows = (n_features - 1) // n_cols + 1
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, 4*n_rows))
-    fig.suptitle("Feature Distributions and Z-Scores", fontsize=16)
+    fig.suptitle("Feature Distributions and Z-Scores", fontsize=16, y=1.02)
 
     for idx, col in enumerate(numeric_columns):
         ax = axes[idx // n_cols, idx % n_cols]
@@ -60,6 +49,12 @@ def visualize_features(combined_df, stats_data, output_file, dpi=300):
         mean = stats_data.at[col, 'mean']
         std = stats_data.at[col, 'std']
         all_zeros = stats_data.at[col, 'all_zeros']
+        cv = stats_data.at[col, 'cv']
+        kurtosis = stats_data.at[col, 'kurtosis']
+        skewness = stats_data.at[col, 'skewness']
+        
+        discriminative_score = calculate_discriminative_score(cv, kurtosis, skewness)
+        is_discriminative = discriminative_score > discriminative_threshold
 
         if all_zeros:
             ax.text(0.5, 0.5, "ALL ZEROS", ha='center', va='center', transform=ax.transAxes, fontsize=12, color='red')
@@ -79,10 +74,83 @@ def visualize_features(combined_df, stats_data, output_file, dpi=300):
         ax.set_title(f"{col}")
         ax.set_xlabel("Z-Score")
         ax.set_ylabel("Frequency")
+        
+        discriminative_text = f"Discriminative" if is_discriminative else "Not Discriminative"
+        discriminative_color = "green" if is_discriminative else "red"
+        ax.text(0.5, -0.15, f"{discriminative_text}\nScore: {discriminative_score:.2f}", 
+                ha='center', va='center', transform=ax.transAxes, fontsize=10, color=discriminative_color)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.savefig(output_file, dpi=dpi)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.98])
+    plt.savefig(output_file, dpi=dpi, bbox_inches='tight')
     plt.close()
+
+    return stats_data
+
+def print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5):
+    print("\nFeature Statistics and Suggestions:")
+    print("===================================")
+    
+    features_to_omit = []
+    
+    for col in stats_data.index:
+        cv = stats_data.at[col, 'cv']
+        kurtosis = stats_data.at[col, 'kurtosis']
+        skewness = stats_data.at[col, 'skewness']
+        all_zeros = stats_data.at[col, 'all_zeros']
+        
+        discriminative_score = calculate_discriminative_score(cv, kurtosis, skewness)
+        
+        print(f"\nFeature: {col}")
+        print(f"  CV: {cv:.4f}")
+        print(f"  Kurtosis: {kurtosis:.4f}")
+        print(f"  Skewness: {skewness:.4f}")
+        print(f"  Discriminative Score: {discriminative_score:.4f}")
+        
+        if all_zeros:
+            print("  Status: ALL ZEROS")
+            features_to_omit.append(col)
+        elif discriminative_score <= discriminative_threshold:
+            print("  Status: Not Discriminative")
+            features_to_omit.append(col)
+        else:
+            print("  Status: Discriminative")
+    
+    print("\nSuggested features to omit:")
+    print(features_to_omit)
+    
+    return features_to_omit
+
+def normalize_and_filter_embeddings(csv_of_embeddings, stats_data, features_to_omit, output_dir):
+    raw_embedding = pd.read_csv(csv_of_embeddings)
+    
+    normalized_embedding = pd.DataFrame()
+    
+    if 'embedding_id' in raw_embedding.columns:
+        normalized_embedding['embedding_id'] = raw_embedding['embedding_id']
+    
+    for col in raw_embedding.columns:
+        if col != 'embedding_id' and col in stats_data.index and col not in features_to_omit:
+            mean = stats_data.at[col, 'mean']
+            std = stats_data.at[col, 'std']
+            percentile_95 = stats_data.at[col, 'percentile_95']
+            percentile_5 = stats_data.at[col, 'percentile_5']
+            
+            if std != 0:
+                zscore = (raw_embedding[col] - mean) / std
+            else:
+                zscore = 0
+            
+            normalized_value = (zscore - (percentile_5 - mean) / std) / ((percentile_95 - mean) / std - (percentile_5 - mean) / std)
+            normalized_embedding[col] = np.clip(normalized_value, 0, 1)
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
+    file_name = os.path.basename(csv_of_embeddings)
+    output_file_path = os.path.join(output_dir, f"normalized_{file_name}")
+    
+    normalized_embedding.to_csv(output_file_path, index=False)
+    
+    print(f"Normalized embedding saved to: {output_file_path}")
 
 def main():
     file_paths = [
@@ -95,14 +163,14 @@ def main():
     combined_df = load_and_combine_data(file_paths)
     stats_data = calculate_statistics(combined_df)
     stats_data.to_csv('embedding_stats.csv', index=True)
-    visualize_features(combined_df, stats_data, 'feature_distributions.png', dpi=300)
-    new_raw_embedding = pd.DataFrame({
-        'feature1': [0.2, 0.4, 0.5],
-        'feature2': [0.6, 0.7, 0.8],
-        'embedding_id': [1, 2, 3]
-    })
-    normalized_embedding = normalize_embedding(new_raw_embedding, stats_data)
-    print(normalized_embedding)
+
+    stats_data = visualize_features(combined_df, stats_data, 'feature_distributions.png', dpi=300, discriminative_threshold=0.5)
+    suggested_features_to_omit = print_feature_stats_and_suggestions(stats_data, discriminative_threshold=0.5)
+    features_to_omit = []  #I will fill this soon
+    output_dir = 'normalisedandready'
+    
+    for csv_file in file_paths:
+        normalize_and_filter_embeddings(csv_file, stats_data, features_to_omit, output_dir)
 
 if __name__ == "__main__":
     main()
