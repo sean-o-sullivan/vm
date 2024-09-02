@@ -63,27 +63,10 @@ embeddings_file = 'path/to/original_embeddings.csv'
 texts_file = 'path/to/original_texts.csv'
 output_file = 'three_way_dataframe.csv'
 
-"""
-This script creates a three-way dataframe that links:
-1. The original text from an author
-2. The normalized embedding representation of that original text
-3. The corresponding adversarial (mimicry) embedding
-
-The purpose is to facilitate analysis of how well the adversarial samples
-mimic the original author's style, by providing direct comparisons between
-the original and adversarial embeddings for each text.
-
-The resulting dataframe allows researchers to:
-1. Compare original and adversarial embeddings directly
-2. Analyze which stylometric features are most affected by the mimicry attempt
-3. Evaluate the effectiveness of the adversarial generation process
-4. Develop and test robustness measures for authorship attribution systems
-"""
-
 three_way_df = create_three_way_dataframe(normalized_adversarial_file, embeddings_file, texts_file, output_file)
 
 print(three_way_df.head())
 
-# Check for any unmatched texts
+# Check unmatched texts
 unmatched_count = adversarial_df.shape[0] - three_way_df.shape[0]
 print(f"Number of unmatched texts: {unmatched_count}")
