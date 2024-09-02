@@ -18,16 +18,17 @@ for index, row in df_a.iterrows():
         for _, match_row in matches.iterrows():
            anchor_embedding = match_row['anchor_embedding']
             
-            new_row = {
-                'anchor_embedding': anchor_embedding,
-                'mimic_GPT3AGG_embedding': row['mimic_GPT3AGG_embedding'],
-                'mimic_GPT4TAGG_embedding': row['mimic_GPT4TAGG_embedding'],
-                'mimic_GPT4oAGG_embedding': row['mimic_GPT4oAGG_embedding'],
-                'topic_GPT3AGG_embedding': row['topic_GPT3AGG_embedding'],
-                'topic_GPT4TAGG_embedding': row['topic_GPT4TAGG_embedding'],
-                'topic_GPT4oAGG_embedding': row['topic_GPT4oAGG_embedding']
-            }
+            new_row = pd.DataFrame({
+                'anchor_embedding': [anchor_embedding],
+                'mimic_GPT3AGG_embedding': [row['mimic_GPT3AGG_embedding']],
+                'mimic_GPT4TAGG_embedding': [row['mimic_GPT4TAGG_embedding']],
+                'mimic_GPT4oAGG_embedding': [row['mimic_GPT4oAGG_embedding']],
+                'topic_GPT3AGG_embedding': [row['topic_GPT3AGG_embedding']],
+                'topic_GPT4TAGG_embedding': [row['topic_GPT4TAGG_embedding']],
+                'topic_GPT4oAGG_embedding': [row['topic_GPT4oAGG_embedding']]
+            })
             
+            # Concatenate the new row to DataFrame S
             df_s = pd.concat([df_s, new_row], ignore_index=True)
 
 df_s.to_csv('output_S.csv', index=False)
