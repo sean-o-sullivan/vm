@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 
+#for generating vm's negative class accuracy on the gpt generated samples.
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -45,7 +46,7 @@ class EnhancedEncoder(nn.Module):
         x = self.relu(self.bn3(self.fc3(x)))
         x = self.dropout(x)
         x = self.bn4(self.fc4(x))
-        return F.normalize(x, p=2, dim=1)  # L2 normalization
+        return F.normalize(x, p=2, dim=1)  
 
 class EnhancedSiameseNetwork(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -74,7 +75,7 @@ class TripletDataset(Dataset):
                 torch.tensor(positive_embedding, dtype=torch.float32),
                 torch.tensor(negative_embedding, dtype=torch.float32))
 
-# Hyperparameters
+
 input_size = 112
 hidden_size = 256
 lr = 0.001
@@ -83,21 +84,21 @@ num_epochs = 200
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 
-# Use MarginRankingLoss
+
 margin = 0.05
 criterion = nn.MarginRankingLoss(margin=margin)
 optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
 current_dir = os.getcwd()
-# train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
-# val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+
+
 
 train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
 val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
 
-# train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
-# val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
+
+
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -116,7 +117,7 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         dist_pos = F.pairwise_distance(anchor_out, positive_out)
         dist_neg = F.pairwise_distance(anchor_out, negative_out)
         
-        # Use 1 for positive pairs (should be ranked higher) and -1 for negative pairs
+        
         target = torch.ones(anchor_out.size(0)).to(device)
         
         loss = criterion(dist_neg, dist_pos, target)
@@ -147,12 +148,12 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.99):
             dist_pos = F.pairwise_distance(anchor_out, positive_out)
             dist_neg = F.pairwise_distance(anchor_out, negative_out)
             
-            # Calculate triplet loss
+            
             target = torch.ones(anchor_out.size(0)).to(device)
             loss = criterion(dist_neg, dist_pos, target)
             running_loss += loss.item()
             
-            # Evaluation metrics
+            
             all_positive_distances.extend(dist_pos.cpu().numpy())
             all_negative_distances.extend(dist_neg.cpu().numpy())
             
@@ -174,21 +175,21 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.99):
     std_pos_dist = np.std(all_positive_distances)
     std_neg_dist = np.std(all_negative_distances)
     
-    #  overlap
+    
     overlap_min = max(np.min(all_positive_distances), np.min(all_negative_distances))
     overlap_max = min(np.max(all_positive_distances), np.max(all_negative_distances))
     overlap_range = max(0, overlap_max - overlap_min)
     total_range = max(np.max(all_positive_distances), np.max(all_negative_distances)) - min(np.min(all_positive_distances), np.min(all_negative_distances))
     overlap_percentage = (overlap_range / total_range) * 100 if total_range > 0 else 0
     
-    #  AUC
+    
     all_distances = np.concatenate([all_positive_distances, all_negative_distances])
     all_labels = np.concatenate([np.ones(len(all_positive_distances)), np.zeros(len(all_negative_distances))])
-    auc = roc_auc_score(all_labels, -all_distances)  # Negative because smaller distance = more similar
+    auc = roc_auc_score(all_labels, -all_distances)  
     
     return avg_loss, mean_pos_dist, mean_neg_dist, std_pos_dist, std_neg_dist, overlap_percentage, auc, overall_accuracy, threshold, positive_accuracy, negative_accuracy
 
-# Best model tracking
+
 best_accuracy = float('-inf')
 best_model_path = None
 
@@ -230,7 +231,7 @@ for epoch in range(num_epochs):
         }, best_model_path)
         print(f"New best model found and saved at epoch {epoch+1} with Accuracy: {accuracy:.4f}")
     
-    # Regular saving every 10 epochs
+    
     if (epoch + 1) % 10 == 0:
         model_save_path = f"{current_dir}/distance_siamese_model_epoch_{epoch+1}.pth"
         torch.save({
@@ -247,4 +248,4 @@ for epoch in range(num_epochs):
         }, model_save_path)
 
 print("Training completed!")
-print(f"Best model saved at {best_model_path} with Accuracy: {best_accuracy:.4f}")
+print(f"Best model is now saved at {best_model_path} with Accuracy: {best_accuracy:.4f}")

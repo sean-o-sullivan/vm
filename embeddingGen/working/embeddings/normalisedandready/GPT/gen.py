@@ -1,5 +1,6 @@
 import pandas as pd
 import ast
+<<<<<<< HEAD
 from tqdm import tqdm
 import time
 
@@ -29,14 +30,41 @@ for index, row in tqdm(df_a.iterrows(), total=df_a.shape[0], desc="Processing ro
 
     embedding_g = row['embeddings']
     print(f"This is em{embedding_g}, at index: {index}")
+=======
+
+# Read File A
+df_a = pd.read_csv('AGG_csv_a_with_embeddings.csv')
+
+# Read File B
+df_b = pd.read_csv('Final-Triplets_G_30_|2|_VTL5_C3.csv')
+
+# Initialize the new DataFrame S
+df_s = pd.DataFrame(columns=['anchor_embedding', 'mimic_GPT3AGG_embedding', 'mimic_GPT4TAGG_embedding', 
+                             'mimic_GPT4oAGG_embedding', 'topic_GPT3AGG_embedding', 
+                             'topic_GPT4TAGG_embedding', 'topic_GPT4oAGG_embedding'])
+
+# Process each row in File A
+for index, row in df_a.iterrows():
+    # Get the last column (embedding G)
+    embedding_g = row['embeddings']
+    
+>>>>>>> 928a16d (Create gen.py)
+    # Strip spaces and convert to list
     embedding_g = ast.literal_eval(embedding_g.strip())
     matches = df_b[df_b['positive_embedding'].apply(lambda x: ast.literal_eval(x) == embedding_g)]
     
     if not matches.empty:
+<<<<<<< HEAD
         total_matches += len(matches)
+=======
+>>>>>>> 928a16d (Create gen.py)
         for _, match_row in matches.iterrows():
-           anchor_embedding = match_row['anchor_embedding']  
-           new_row = pd.DataFrame({
+            # Get the anchor_embedding (Q) from the matching row in File B
+            anchor_embedding = match_row['anchor_embedding']
+            
+<<<<<<< HEAD
+            # Create a new row as a DataFrame
+            new_row = pd.DataFrame({
                 'anchor_embedding': [anchor_embedding],
                 'mimic_GPT3ABB_embedding': [row['mimic_GPT3ABB_embedding']],
                 'mimic_GPT4TABB_embedding': [row['mimic_GPT4TABB_embedding']],
@@ -65,3 +93,23 @@ print(f"Total rows processed: {df_a.shape[0]}")
 print(f"Total matches found: {total_matches}")
 print(f"Final size of output DataFrame S: {df_s.shape}")
 print(f"Total processing time: {total_time:.2f} seconds")
+=======
+            # Get other embeddings from the current row in File A
+            new_row = {
+                'anchor_embedding': anchor_embedding,
+                'mimic_GPT3AGG_embedding': row['mimic_GPT3AGG_embedding'],
+                'mimic_GPT4TAGG_embedding': row['mimic_GPT4TAGG_embedding'],
+                'mimic_GPT4oAGG_embedding': row['mimic_GPT4oAGG_embedding'],
+                'topic_GPT3AGG_embedding': row['topic_GPT3AGG_embedding'],
+                'topic_GPT4TAGG_embedding': row['topic_GPT4TAGG_embedding'],
+                'topic_GPT4oAGG_embedding': row['topic_GPT4oAGG_embedding']
+            }
+            
+            # Append the new row to DataFrame S
+            df_s = df_s.append(new_row, ignore_index=True)
+
+# Save DataFrame S to CSV
+df_s.to_csv('output_S.csv', index=False)
+
+print("Processing complete. Output saved to 'output_S.csv'.")
+>>>>>>> 928a16d (Create gen.py)
