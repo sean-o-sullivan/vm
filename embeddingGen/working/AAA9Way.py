@@ -17,8 +17,10 @@ def load_embeddings(embeddings_file, texts_file):
     print(f"Texts DF head: {texts_df.head()}")
     
     print("Merging embeddings and texts")
-    combined_df = pd.merge(embeddings_df, texts_df, on='author', how='inner')
-    print(f"Combined shape: {combined_df.shape}")
+    input("")
+    # combined_df = pd.merge(embeddings_df, texts_df, on='author', how='inner')
+    # print(f"Combined shape: {combined_df.shape}")
+
     
     embedding_columns = [col for col in combined_df.columns if col not in ['embedding_id', 'author', 'cleaned_text']]
     combined_df['embedding'] = combined_df[embedding_columns].values.tolist()
