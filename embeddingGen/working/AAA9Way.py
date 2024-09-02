@@ -66,6 +66,7 @@ def create_comprehensive_dataframe( original_texts_file, original_embeddings_fil
             print(f"Making the combined df: processing row {idx}")
 
         print(orig_row)
+        print("\n\n")
         
         # author = orig_row['author']
         # # # original_text = orig_row['cleaned_text']
