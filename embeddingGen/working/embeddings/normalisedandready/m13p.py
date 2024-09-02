@@ -63,7 +63,7 @@ class EvaluationDataset(Dataset):
         return (torch.tensor(anchor_embedding, dtype=torch.float32),
                 torch.tensor(negative_embedding, dtype=torch.float32))
 
-def evaluate_model(model, dataloader, device, threshold=0.99):
+def evaluate_model(model, dataloader, device, threshold=1.5):
     model.eval()
     all_distances = []
     all_predictions = []
@@ -102,7 +102,7 @@ embedding_columns = [
 print("Starting Evaluation...")
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-results_file = f"comprehensive_evaluation_results_{timestamp}.csv"
+results_file = f"c2omprehensive_evaluation_results_{timestamp}.csv"
 with open(results_file, 'w', newline='') as csvfile:
     csvwriter = csv.writer(csvfile)
     csvwriter.writerow(['Embedding Type', 'Accuracy', 'AUC', 'Precision', 'Recall', 'F1 Score',
