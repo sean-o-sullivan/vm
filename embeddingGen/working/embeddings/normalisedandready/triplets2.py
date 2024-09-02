@@ -49,7 +49,7 @@ def generate_combinations_for_author(author_texts, author_id):
 
     return combinations_list, context_embeddings_list
 
-datasetpath = "GG_30.csv"
+datasetpath = "BB_70.csv"
 df = pd.read_csv(datasetpath)
 
 of = os.path.splitext(datasetpath)[0]

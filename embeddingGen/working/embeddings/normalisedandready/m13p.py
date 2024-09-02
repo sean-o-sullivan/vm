@@ -86,7 +86,7 @@ hidden_size = 256
 batch_size = 128
 
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "best_distance_siamese_model.pth")
+model_path = os.path.join(current_dir, "BnG_2_best_distance_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device)
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
@@ -111,7 +111,7 @@ with open(results_file, 'w', newline='') as csvfile:
     for column in embedding_columns:
         print(f"\nEvaluating {column}:")
         
-        eval_dataset = EvaluationDataset(os.path.join(current_dir, "output_S.csv"), column)
+        eval_dataset = EvaluationDataset('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/GPT/output_S.csv', column)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
         
         distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])

@@ -11,8 +11,6 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 
-#for generating vm's negative class accuracy on the gpt generated samples.
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def set_seed(seed=42):
@@ -84,7 +82,6 @@ num_epochs = 200
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 
-
 margin = 0.05
 criterion = nn.MarginRankingLoss(margin=margin)
 optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
@@ -92,13 +89,8 @@ scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
 current_dir = os.getcwd()
 
-
-
 train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
 val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
-
-
-
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -116,7 +108,6 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         
         dist_pos = F.pairwise_distance(anchor_out, positive_out)
         dist_neg = F.pairwise_distance(anchor_out, negative_out)
-        
         
         target = torch.ones(anchor_out.size(0)).to(device)
         
@@ -148,11 +139,9 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.99):
             dist_pos = F.pairwise_distance(anchor_out, positive_out)
             dist_neg = F.pairwise_distance(anchor_out, negative_out)
             
-            
             target = torch.ones(anchor_out.size(0)).to(device)
             loss = criterion(dist_neg, dist_pos, target)
             running_loss += loss.item()
-            
             
             all_positive_distances.extend(dist_pos.cpu().numpy())
             all_negative_distances.extend(dist_neg.cpu().numpy())
@@ -175,13 +164,11 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.99):
     std_pos_dist = np.std(all_positive_distances)
     std_neg_dist = np.std(all_negative_distances)
     
-    
     overlap_min = max(np.min(all_positive_distances), np.min(all_negative_distances))
     overlap_max = min(np.max(all_positive_distances), np.max(all_negative_distances))
     overlap_range = max(0, overlap_max - overlap_min)
     total_range = max(np.max(all_positive_distances), np.max(all_negative_distances)) - min(np.min(all_positive_distances), np.min(all_negative_distances))
     overlap_percentage = (overlap_range / total_range) * 100 if total_range > 0 else 0
-    
     
     all_distances = np.concatenate([all_positive_distances, all_negative_distances])
     all_labels = np.concatenate([np.ones(len(all_positive_distances)), np.zeros(len(all_negative_distances))])
@@ -230,7 +217,6 @@ for epoch in range(num_epochs):
             'negative_accuracy': neg_acc
         }, best_model_path)
         print(f"New best model found and saved at epoch {epoch+1} with Accuracy: {accuracy:.4f}")
-    
     
     if (epoch + 1) % 10 == 0:
         model_save_path = f"{current_dir}/distance_siamese_model_epoch_{epoch+1}.pth"
