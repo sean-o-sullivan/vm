@@ -35,7 +35,7 @@ class EnhancedEncoder(nn.Module):
         x = self.relu(self.bn3(self.fc3(x)))
         x = self.dropout(x)
         x = self.bn4(self.fc4(x))
-        return F.normalize(x, p=2, dim=1)  # L2
+        return F.normalize(x, p=2, dim=1)  # L2 
 
 class EnhancedSiameseNetwork(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -83,9 +83,9 @@ def evaluate_model(model, dataloader, device, threshold=0.99):
 
 input_size = 112
 hidden_size = 256
-batch_size = 1 #128
+batch_size = 128
 
-# Load the model
+# model
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, "BnG_2_best_distance_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device, weights_only=False)
@@ -119,18 +119,19 @@ with open(results_file, 'w', newline='') as csvfile:
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
         
         # Evaluate the model
-        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=0.5)#checkpoint['threshold']
+        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])
         
+        # Calculate metrics
         total_samples = len(predictions)
-        true_negatives = sum(predictions)  
-        false_positives = total_samples - true_negatives  
+        true_negatives = sum(predictions)  # Correct dissimilar predictions
+        false_positives = total_samples - true_negatives  # Incorrect similar predictions
         
         accuracy = accuracy_score([1] * total_samples, predictions)
         precision = precision_score([1] * total_samples, predictions, zero_division=1)
         recall = recall_score([1] * total_samples, predictions, zero_division=1)
         f1 = f1_score([1] * total_samples, predictions, zero_division=1)
         
-        true_positive_rate = 0  
+        true_positive_rate = 0  # We don't expect any true positives
         false_positive_rate = false_positives / total_samples
         
         mean_dist = np.mean(distances)
@@ -138,13 +139,14 @@ with open(results_file, 'w', newline='') as csvfile:
         min_dist = np.min(distances)
         max_dist = np.max(distances)
         
-        # # Write results to CSV
-        # csvwriter.writerow([column, accuracy, precision, recall, f1,
-        #                     mean_dist, std_dist, min_dist, max_dist,
-        #                     checkpoint['threshold'], total_samples,
-        #                     true_negatives, false_positives,
-        #                     true_positive_rate, false_positive_rate])
+        # Write results to CSV
+        csvwriter.writerow([column, accuracy, precision, recall, f1,
+                            mean_dist, std_dist, min_dist, max_dist,
+                            checkpoint['threshold'], total_samples,
+                            true_negatives, false_positives,
+                            true_positive_rate, false_positive_rate])
         
+        # Print results
         print(f"Accuracy: {accuracy:.4f}")
         print(f"Precision: {precision:.4f}")
         print(f"Recall: {recall:.4f}")
