@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import ast
 import numpy as np
-from sklearn.metrics import roc_auc_score, accuracy_score
+from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score
 import os
 from tqdm import tqdm
 import csv
@@ -88,7 +88,7 @@ batch_size = 128
 # model
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, "BnG_2_best_distance_siamese_model.pth")
-checkpoint = torch.load(model_path, map_location=device)
+checkpoint = torch.load(model_path, map_location=device, weights_only=True)
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 siamese_net.load_state_dict(checkpoint['model_state_dict'])
@@ -104,11 +104,14 @@ print("Starting Evaluation...")
 
 # CSV file
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-results_file = f"evaluation_results_{timestamp}.csv"
+results_file = f"comprehensive_evaluation_results_{timestamp}.csv"
 with open(results_file, 'w', newline='') as csvfile:
     csvwriter = csv.writer(csvfile)
-    csvwriter.writerow(['Embedding Type', 'Accuracy', 'AUC', 'Mean Distance', 'Std Distance', 
-                        'Min Distance', 'Max Distance', 'Threshold'])
+    csvwriter.writerow(['Embedding Type', 'Accuracy', 'AUC', 'Precision', 'Recall', 'F1 Score',
+                        'Mean Distance', 'Std Distance', 'Min Distance', 'Max Distance',
+                        'Threshold', 'Unique Predictions', 'Total Samples',
+                        'Positive Predictions', 'Negative Predictions',
+                        'True Positives', 'False Positives', 'True Negatives', 'False Negatives'])
 
     for column in embedding_columns:
         print(f"\nEvaluating {column}:")
@@ -119,20 +122,55 @@ with open(results_file, 'w', newline='') as csvfile:
         # evaluate 
         distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])
         
-        # metrics
-        accuracy = accuracy_score([1] * len(predictions), predictions)
-        auc = roc_auc_score([1] * len(predictions), distances)
+        #  metrics
+        true_labels = [1] * len(predictions)  # All samples are supposed to be negative class
+        accuracy = accuracy_score(true_labels, predictions)
+        unique_predictions = len(set(predictions))
+        total_samples = len(predictions)
+        positive_predictions = sum(predictions)
+        negative_predictions = total_samples - positive_predictions
+        
+        # confusion matrix
+        true_positives = sum((t == 1 and p == 1) for t, p in zip(true_labels, predictions))
+        false_positives = sum((t == 0 and p == 1) for t, p in zip(true_labels, predictions))
+        true_negatives = sum((t == 0 and p == 0) for t, p in zip(true_labels, predictions))
+        false_negatives = sum((t == 1 and p == 0) for t, p in zip(true_labels, predictions))
+        
+        if unique_predictions > 1:
+            auc = roc_auc_score(true_labels, distances)
+            precision = precision_score(true_labels, predictions)
+            recall = recall_score(true_labels, predictions)
+            f1 = f1_score(true_labels, predictions)
+        else:
+            auc = precision = recall = f1 = "N/A (All predictions are the same class)"
+        
         mean_dist = np.mean(distances)
         std_dist = np.std(distances)
         min_dist = np.min(distances)
         max_dist = np.max(distances)
         
-        csvwriter.writerow([column, accuracy, auc, mean_dist, std_dist, min_dist, max_dist, checkpoint['threshold']])
+        csvwriter.writerow([column, accuracy, auc, precision, recall, f1,
+                            mean_dist, std_dist, min_dist, max_dist,
+                            checkpoint['threshold'], unique_predictions, total_samples,
+                            positive_predictions, negative_predictions,
+                            true_positives, false_positives, true_negatives, false_negatives])
+        
         print(f"Accuracy: {accuracy:.4f}")
-        print(f"AUC: {auc:.4f}")
+        print(f"AUC: {auc}")
+        print(f"Precision: {precision}")
+        print(f"Recall: {recall}")
+        print(f"F1 Score: {f1}")
         print(f"Mean Distance: {mean_dist:.4f} ± {std_dist:.4f}")
         print(f"Min Distance: {min_dist:.4f}")
         print(f"Max Distance: {max_dist:.4f}")
         print(f"Threshold: {checkpoint['threshold']:.4f}")
+        print(f"Unique Predictions: {unique_predictions}")
+        print(f"Total Samples: {total_samples}")
+        print(f"Positive Predictions: {positive_predictions}")
+        print(f"Negative Predictions: {negative_predictions}")
+        print(f"True Positives: {true_positives}")
+        print(f"False Positives: {false_positives}")
+        print(f"True Negatives: {true_negatives}")
+        print(f"False Negatives: {false_negatives}")
 
-print(f"\nEvaluation completed! Resultsto {results_file}")
+print(f"\nComprehensive evaluation completed! Results are saved to {results_file}")
