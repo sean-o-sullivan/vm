@@ -14,8 +14,22 @@ if __name__ == "__main__":
 
     texts_df = load_texts('/home/aiadmin/Desktop/code/vm/embeddingGen/working/ABB_30.csv')
     embeddings_df = load_embeddings('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv')
+    if 'author' not in texts_df.columns:
+        raise ValueError("'author' column is missing from the texts DataFrame.")
+
+    texts_authors = set(texts_df['author'])
+    embeddings_authors = set(embeddings_df.index) 
+
+    missing_in_texts = embeddings_authors - texts_authors
+    missing_in_embeddings = texts_authors - embeddings_authors
+
+    if missing_in_texts:
+        print(f"Authors present in embeddings but missing in texts: {missing_in_texts}")
+    if missing_in_embeddings:
+        print(f"Authors present in texts but missing in embeddings: {missing_in_embeddings}")
+
     if len(texts_df) != len(embeddings_df):
-        raise ValueError("The number of rows in the texts and embeddings DataFrames do not match. eek!.")
+        raise ValueError("The number of rows in the texts and embeddings DataFrames still do not match after checking for missing authors.")
     
     texts_df['embeddings'] = embeddings_df['embeddings']
     output_file = 'combined_texts_and_embeddings.csv'
