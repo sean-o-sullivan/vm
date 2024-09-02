@@ -28,10 +28,16 @@ def create_comprehensive_dataframe(original_embeddings_file, original_texts_file
     mimic_embeddings = {name: load_csv(file, 'generated_mimicry_embedding') for name, file in mimic_files.items()}
     topic_embeddings = {name: load_csv(file, 'generated_text_embedding') for name, file in topic_files.items()}
     
+    min_length = min(
+        len(original_data_df),
+        *[len(df) for df in mimic_embeddings.values()],
+        *[len(df) for df in topic_embeddings.values()]
+    )
+    
     combined_data = []
     
     print("Creating the combined DataFrame")
-    for i in range(len(original_data_df)):
+    for i in range(min_length):
         combined_row = {
             'author': original_data_df.loc[i, 'author'],
             'original_text': original_data_df.loc[i, 'cleaned_text'],
