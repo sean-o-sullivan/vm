@@ -38,7 +38,6 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
                 normalized_embedding.append(normalized_value)
         
         return str(normalized_embedding)
-
     df[embedding_column] = df[embedding_column].apply(normalize_embedding)
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, f"normalized_{os.path.basename(csv_path)}")
