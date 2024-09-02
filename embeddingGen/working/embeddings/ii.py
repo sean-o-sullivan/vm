@@ -3,6 +3,9 @@ import numpy as np
 import os
 import ast
 
+
+
+print('hi')
 def create_feature_mapping():
     # Create a mapping of index positions to feature names
     feature_names = [
