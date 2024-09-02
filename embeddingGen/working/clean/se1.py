@@ -5,21 +5,23 @@ def load_texts(texts_csv):
 
 def load_embeddings(embeddings_csv):
     df = pd.read_csv(embeddings_csv)
-    df = df.iloc[:, 2:]  # Disregard the first two columns
+    df = df.iloc[:, 1:]  # Disregard the first two columns
+    #'author' column is in row 2, i need to include it
     df['embeddings'] = df.apply(lambda row: row.tolist(), axis=1)
-    df = df[['embeddings']]
+    df = df[['author','embeddings']]
     return df
 
 if __name__ == "__main__":
 
-    texts_df = load_texts('/home/aiadmin/Desktop/code/vm/embeddingGen/working/ABB_30.csv')
-    embeddings_df = load_embeddings('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv')
+    texts_df = load_texts('/home/aiadmin/Desktop/code/vm/embeddingGen/working/AGG_30.csv')
+    embeddings_df = load_embeddings('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/GG_30.csv')
+    
+
     if 'author' not in texts_df.columns:
         raise ValueError("'author' column is missing from the texts DataFrame.")
 
     texts_authors = set(texts_df['author'])
-    embeddings_authors = set(embeddings_df.index) 
-
+    embeddings_authors = set(embeddings_df['author'])
     missing_in_texts = embeddings_authors - texts_authors
     missing_in_embeddings = texts_authors - embeddings_authors
 
