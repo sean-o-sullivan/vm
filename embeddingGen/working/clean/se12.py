@@ -21,9 +21,8 @@ if __name__ == "__main__":
         raise ValueError("'author' column is missing from the texts DataFrame.")
 
     texts_author_counts = texts_df['author'].value_counts()
-    print(f"\n{texts_author_counts}")
     embeddings_author_counts = embeddings_df['author'].value_counts()
-    print(f"\n{embeddings_author_counts}")
+
     author_with_missing_occurrence = None
     for author in texts_author_counts.index:
         if texts_author_counts[author] != embeddings_author_counts.get(author, 0):
@@ -42,9 +41,6 @@ if __name__ == "__main__":
     
     texts_df['embeddings'] = embeddings_df['embeddings']
     output_file = 'combined_texts_and_embeddings.csv'
-
-    texts_df = texts_df.drop(texts_df.columns[0], axis=1)
-    
     texts_df.to_csv(output_file, index=False)
     
     print(f"Combined DataFrame saved to {output_file}")
