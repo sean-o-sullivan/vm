@@ -87,7 +87,7 @@ batch_size = 128
 
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, "BnG_2_best_distance_siamese_model.pth")
-checkpoint = torch.load(model_path, map_location=device, weights_only=True)
+checkpoint = torch.load(model_path, map_location=device, weights_only=False)
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 siamese_net.load_state_dict(checkpoint['model_state_dict'])
@@ -131,13 +131,15 @@ with open(results_file, 'w', newline='') as csvfile:
         true_negatives = sum((t == 0 and p == 0) for t, p in zip(true_labels, predictions))
         false_negatives = sum((t == 1 and p == 0) for t, p in zip(true_labels, predictions))
         
-        if unique_predictions > 1:
-            auc = roc_auc_score(true_labels, distances)
-            precision = precision_score(true_labels, predictions)
-            recall = recall_score(true_labels, predictions)
-            f1 = f1_score(true_labels, predictions)
-        else:
-            auc = precision = recall = f1 = "N/A (All predictions are the same class)"
+        # Handle metric calculations
+    #   # if unique_predictions > 1:
+    #     if 2 > 1:
+    #         auc = roc_auc_score(true_labels, distances)
+    #         precision = precision_score(true_labels, predictions)
+    #         recall = recall_score(true_labels, predictions)
+    #         f1 = f1_score(true_labels, predictions)
+    #     else:
+        auc = precision = recall = f1 = "N/A (All predictions are the same class)"
         
         mean_dist = np.mean(distances)
         std_dist = np.std(distances)
