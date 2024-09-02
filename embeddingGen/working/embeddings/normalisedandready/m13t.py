@@ -83,7 +83,9 @@ def evaluate_model(model, dataloader, device, threshold=0.99):
 
 input_size = 112
 hidden_size = 256
-batch_size = 128
+batch_size = 1 #128
+
+# Load the model
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, "BnG_2_best_distance_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device, weights_only=False)
@@ -115,7 +117,9 @@ with open(results_file, 'w', newline='') as csvfile:
         
         eval_dataset = EvaluationDataset('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/GPT/output_S.csv', column)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
-        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])
+        
+        # Evaluate the model
+        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=0.5)#checkpoint['threshold']
         
         total_samples = len(predictions)
         true_negatives = sum(predictions)  
@@ -133,12 +137,13 @@ with open(results_file, 'w', newline='') as csvfile:
         std_dist = np.std(distances)
         min_dist = np.min(distances)
         max_dist = np.max(distances)
-    
-        csvwriter.writerow([column, accuracy, precision, recall, f1,
-                            mean_dist, std_dist, min_dist, max_dist,
-                            checkpoint['threshold'], total_samples,
-                            true_negatives, false_positives,
-                            true_positive_rate, false_positive_rate])
+        
+        # # Write results to CSV
+        # csvwriter.writerow([column, accuracy, precision, recall, f1,
+        #                     mean_dist, std_dist, min_dist, max_dist,
+        #                     checkpoint['threshold'], total_samples,
+        #                     true_negatives, false_positives,
+        #                     true_positive_rate, false_positive_rate])
         
         print(f"Accuracy: {accuracy:.4f}")
         print(f"Precision: {precision:.4f}")
