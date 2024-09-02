@@ -59,6 +59,7 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
     # Initialize the comprehensive dataframe with original data
     comprehensive_df = original_data_df.copy()
     comprehensive_df = comprehensive_df.rename(columns={'embedding': 'original_embedding'})
+    comprehensive_df.set_index('author', inplace=True)
 
     # Load all adversarial embeddings
     adversarial_dfs = {
@@ -87,12 +88,15 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
             
             if not matching_rows.empty:
                 # If match found, add the adversarial embedding to the comprehensive dataframe
-                matching_index = matching_rows.index[0]
-                comprehensive_df.at[matching_index, adv_type] = str(adv_row[embedding_col])  # Convert to string
+                matching_author = matching_rows.index[0]
+                comprehensive_df.at[matching_author, adv_type] = str(adv_row[embedding_col])  # Convert to string
 
         print(f"Finished processing {adv_type} embeddings")
         print(f"Number of matches found: {comprehensive_df[adv_type].notna().sum()}")
 
+    comprehensive_df.reset_index(inplace=True)
+
+    # Save comprehensive dataframe
     print("Saving comprehensive dataframe to CSV")
     comprehensive_df.to_csv(output_file, index=False)
     print(f"Comprehensive dataframe saved to {output_file}")
@@ -103,7 +107,7 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
 # Usage.
 print("Setting up the file paths")
 
-# File paths
+#  paths
 original_embeddings_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv'
 original_texts_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/ABB_30.csv'
 gpt3_mimic_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT3ABB_30_embeddings.csv'
