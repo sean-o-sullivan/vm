@@ -83,7 +83,7 @@ def evaluate_model(model, dataloader, device, threshold=0.99):
 
 input_size = 112
 hidden_size = 256
-batch_size = 128
+batch_size = 1 #128
 
 # model
 current_dir = os.getcwd()
@@ -119,7 +119,7 @@ with open(results_file, 'w', newline='') as csvfile:
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
         
         # Evaluate the model
-        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])
+        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=0.5)#checkpoint['threshold']
         
         # Calculate metrics
         total_samples = len(predictions)
@@ -139,12 +139,12 @@ with open(results_file, 'w', newline='') as csvfile:
         min_dist = np.min(distances)
         max_dist = np.max(distances)
         
-        # Write results to CSV
-        csvwriter.writerow([column, accuracy, precision, recall, f1,
-                            mean_dist, std_dist, min_dist, max_dist,
-                            checkpoint['threshold'], total_samples,
-                            true_negatives, false_positives,
-                            true_positive_rate, false_positive_rate])
+        # # Write results to CSV
+        # csvwriter.writerow([column, accuracy, precision, recall, f1,
+        #                     mean_dist, std_dist, min_dist, max_dist,
+        #                     checkpoint['threshold'], total_samples,
+        #                     true_negatives, false_positives,
+        #                     true_positive_rate, false_positive_rate])
         
         # Print results
         print(f"Accuracy: {accuracy:.4f}")

@@ -117,7 +117,7 @@ with open(results_file, 'w', newline='') as csvfile:
         eval_dataset = EvaluationDataset('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/GPT/output_S.csv', column)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
         
-        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])
+        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=1.2)#checkpoint['threshold']
         
         true_labels = [1] * len(predictions)  # All samples are supposed to be negative class
         accuracy = accuracy_score(true_labels, predictions)
@@ -146,11 +146,12 @@ with open(results_file, 'w', newline='') as csvfile:
         min_dist = np.min(distances)
         max_dist = np.max(distances)
         
-        csvwriter.writerow([column, accuracy, auc, precision, recall, f1,
-                            mean_dist, std_dist, min_dist, max_dist,
-                            checkpoint['threshold'], unique_predictions, total_samples,
-                            positive_predictions, negative_predictions,
-                            true_positives, false_positives, true_negatives, false_negatives])
+        # # Write results to CSV
+        # csvwriter.writerow([column, accuracy, auc, precision, recall, f1,
+        #                     mean_dist, std_dist, min_dist, max_dist,
+        #                     checkpoint['threshold'], unique_predictions, total_samples,
+        #                     positive_predictions, negative_predictions,
+        #                     true_positives, false_positives, true_negatives, false_negatives])
         
         print(f"Accuracy: {accuracy:.4f}")
         print(f"AUC: {auc}")
