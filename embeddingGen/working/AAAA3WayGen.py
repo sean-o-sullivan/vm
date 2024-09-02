@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import ast
+import os
 
 def load_embeddings(embeddings_file, texts_file):
 
@@ -12,50 +13,89 @@ def load_embeddings(embeddings_file, texts_file):
     return combined_df[['author', 'cleaned_text', 'embedding']]
 
 def find_matching_text(original_text, adversarial_text, char_limit=500):
+  
     original_substr = original_text[:char_limit]
     return original_substr in adversarial_text
 
-def create_three_way_dataframe(normalized_adversarial_file, embeddings_file, texts_file, output_file):
+def load_adversarial_embeddings(file_path, embedding_column):
+ 
+    df = pd.read_csv(file_path)
+    df[embedding_column] = df[embedding_column].apply(ast.literal_eval)
+    return df
 
-    adversarial_df = pd.read_csv(normalized_adversarial_file)
-    adversarial_df['generated_mimicry_embedding'] = adversarial_df['generated_mimicry_embedding'].apply(ast.literal_eval)
-    original_data_df = load_embeddings(embeddings_file, texts_file)
+def create_comprehensive_dataframe(original_embeddings_file, original_texts_file, 
+                                   gpt3_mimic_file, gpt3_raw_file,
+                                   gpt4t_mimic_file, gpt4t_raw_file,
+                                   gpt4o_mimic_file, gpt4o_raw_file,
+                                   output_file):
+   
+    original_data_df = load_embeddings(original_embeddings_file, original_texts_file)
+    gpt3_mimic_df = load_adversarial_embeddings(gpt3_mimic_file, 'generated_mimicry_embedding')
+    gpt3_raw_df = load_adversarial_embeddings(gpt3_raw_file, 'generated_text_embedding')
+    gpt4t_mimic_df = load_adversarial_embeddings(gpt4t_mimic_file, 'generated_mimicry_embedding')
+    gpt4t_raw_df = load_adversarial_embeddings(gpt4t_raw_file, 'generated_text_embedding')
+    gpt4o_mimic_df = load_adversarial_embeddings(gpt4o_mimic_file, 'generated_mimicry_embedding')
+    gpt4o_raw_df = load_adversarial_embeddings(gpt4o_raw_file, 'generated_text_embedding')
 
-    three_way_data = []
+    comprehensive_data = []
 
-    for _, adv_row in adversarial_df.iterrows():
-        author = adv_row['author']
-        adversarial_text = adv_row['original_text']
-        mimicry_embedding = adv_row['generated_mimicry_embedding']
-        matching_original = original_data_df[original_data_df['author'] == author]
-        
-        match_found = False
-        for _, orig_row in matching_original.iterrows():
-            if find_matching_text(orig_row['cleaned_text'], adversarial_text):
-                three_way_data.append({
-                    'author': author,
-                    'original_text': orig_row['cleaned_text'],
-                    'original_embedding': orig_row['embedding'],
-                    'adversarial_embedding': mimicry_embedding
-                })
-                match_found = True
-                break
-        
-        if not match_found:
-            print(f"Warning: No matching original text found for author {author}")
-    three_way_df = pd.DataFrame(three_way_data)
-    three_way_df.to_csv(output_file, index=False)
-    print(f"Three-way dataframe saved to {output_file}")
+    for _, orig_row in original_data_df.iterrows():
+        author = orig_row['author']
+        original_text = orig_row['cleaned_text']
+        original_embedding = orig_row['embedding']
+
+        row_data = {
+            'author': author,
+            'original_text': original_text,
+            'original_embedding': original_embedding
+        }
+
+        # Find matching adversarial embeddings
+        for df, embedding_type in [
+            (gpt3_mimic_df, 'gpt3_mimic'), (gpt3_raw_df, 'gpt3_raw'),
+            (gpt4t_mimic_df, 'gpt4t_mimic'), (gpt4t_raw_df, 'gpt4t_raw'),
+            (gpt4o_mimic_df, 'gpt4o_mimic'), (gpt4o_raw_df, 'gpt4o_raw')
+        ]:
+            matching_row = df[(df['author'] == author) & 
+                              (df['original_text'].apply(lambda x: find_matching_text(original_text, x)))]
+            
+            if not matching_row.empty:
+                embedding_col = 'generated_mimicry_embedding' if 'mimic' in embedding_type else 'generated_text_embedding'
+                row_data[embedding_type] = matching_row.iloc[0][embedding_col]
+            else:
+                print(f"Warning: No matching {embedding_type} embedding found for author {author}")
+                row_data[embedding_type] = None
+
+        comprehensive_data.append(row_data)
+
+    comprehensive_df = pd.DataFrame(comprehensive_data)
+    comprehensive_df.to_csv(output_file, index=False)
+    print(f"Comprehensive dataframe saved to {output_file}")
     
-    return three_way_df
+    return comprehensive_df
 
-normalized_adversarial_file = 'path/to/normalized_adversarial_embeddings.csv'
-embeddings_file = 'path/to/original_embeddings.csv'
-texts_file = 'path/to/original_texts.csv'
-output_file = 'three_way_dataframe.csv'
+# Usage
+original_embeddings_file = 'path/to/original_embeddings.csv'
+original_texts_file = 'path/to/original_texts.csv'
+gpt3_mimic_file = 'path/to/gpt3_mimic_embeddings.csv'
+gpt3_raw_file = 'path/to/gpt3_raw_embeddings.csv'
+gpt4t_mimic_file = 'path/to/gpt4t_mimic_embeddings.csv'
+gpt4t_raw_file = 'path/to/gpt4t_raw_embeddings.csv'
+gpt4o_mimic_file = 'path/to/gpt4o_mimic_embeddings.csv'
+gpt4o_raw_file = 'path/to/gpt4o_raw_embeddings.csv'
+output_file = 'comprehensive_dataframe.csv'
 
-three_way_df = create_three_way_dataframe(normalized_adversarial_file, embeddings_file, texts_file, output_file)
+comprehensive_df = create_comprehensive_dataframe(
+    original_embeddings_file, original_texts_file,
+    gpt3_mimic_file, gpt3_raw_file,
+    gpt4t_mimic_file, gpt4t_raw_file,
+    gpt4o_mimic_file, gpt4o_raw_file,
+    output_file
+)
 
-print(three_way_df.head())
-unmatched_count = adversarial_df.shape[0] - three_way_df.shape[0]
-print(f"Number of unmatched texts: {unmatched_count}")
+print(comprehensive_df.head())
+
+# Check for any missing adversarial embeddings
+for embedding_type in ['gpt3_mimic', 'gpt3_raw', 'gpt4t_mimic', 'gpt4t_raw', 'gpt4o_mimic', 'gpt4o_raw']:
+    missing_count = comprehensive_df[embedding_type].isna().sum()
+    print(f"Number of missing {embedding_type} embeddings: {missing_count}")
