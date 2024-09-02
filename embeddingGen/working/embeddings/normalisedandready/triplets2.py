@@ -78,13 +78,12 @@ for _, row in tqdm(combined_df.iterrows(), total=len(combined_df), desc='Generat
     false_pairs.append(negative_embed)
 
 combined_df['negative_embedding'] = false_pairs
+def format_embedding_as_list(embedding):
+    return f"[{','.join(map(str, embedding))}]"
 
-def format_embedding(embedding):
-    return ','.join(map(str, embedding))
-
-combined_df['anchor_embedding'] = combined_df['anchor_embedding'].apply(format_embedding)
-combined_df['positive_embedding'] = combined_df['positive_embedding'].apply(format_embedding)
-combined_df['negative_embedding'] = combined_df['negative_embedding'].apply(format_embedding)
+combined_df['anchor_embedding'] = combined_df['anchor_embedding'].apply(format_embedding_as_list)
+combined_df['positive_embedding'] = combined_df['positive_embedding'].apply(format_embedding_as_list)
+combined_df['negative_embedding'] = combined_df['negative_embedding'].apply(format_embedding_as_list)
 
 combined_df = combined_df.drop(columns=['author'])
 
@@ -111,3 +110,13 @@ if len(df_verify.columns) != 3:
     print(f"Warning: Expected 3 columns, but found {len(df_verify.columns)}")
 else:
     print("Correct number of columns (3) in the output")
+
+sample_row = df_verify.iloc[0]
+print("\nSample row format:")
+for column in df_verify.columns:
+    print(f"{column}: {sample_row[column]}")
+    try:
+        ast.literal_eval(sample_row[column])
+        print(f"  - Correctly formatted as a list-like string")
+    except:
+        print(f"  - WARNING: Not correctly formatted as a list-like string")
