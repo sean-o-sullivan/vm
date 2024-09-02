@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import ast
 
 def find_embedding_column(df):
     embedding_cols = [col for col in df.columns if 'embedding' in col.lower()]
@@ -9,11 +10,24 @@ def find_embedding_column(df):
         print(f"Warning: Multiple embedding columns found: {embedding_cols}. Using the first one.")
     return embedding_cols[0]
 
+def parse_embedding(value):
+    """Parse embedding value, handling different formats."""
+    if isinstance(value, str):
+        try:
+            return ast.literal_eval(value)
+        except:
+            return value.split(',')
+    elif isinstance(value, list):
+        return value
+    else:
+        return [value] 
+
 def load_and_process_csv(file_path):
     print(f"Loading file: {file_path}")
     df = pd.read_csv(file_path)
     embedding_col = find_embedding_column(df)
-    df[embedding_col] = df[embedding_col].apply(eval)
+    
+    df[embedding_col] = df[embedding_col].apply(parse_embedding)
     
     return df[['author', 'original_text', embedding_col]]
 
