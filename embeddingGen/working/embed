@@ -1,0 +1,89 @@
+import pandas as pd
+import numpy as np
+import ast
+
+def load_embeddings(embeddings_file, texts_file):
+
+    embeddings_df = pd.read_csv(embeddings_file)
+    texts_df = pd.read_csv(texts_file)
+    combined_df = pd.merge(embeddings_df, texts_df, on='author', how='inner')
+    embedding_columns = [col for col in combined_df.columns if col not in ['embedding_id', 'author', 'cleaned_text']]
+    combined_df['embedding'] = combined_df[embedding_columns].values.tolist()
+    return combined_df[['author', 'cleaned_text', 'embedding']]
+
+def find_matching_text(original_text, adversarial_text, char_limit=500):
+ 
+    original_substr = original_text[:char_limit]
+    return original_substr in adversarial_text
+
+def create_three_way_dataframe(normalized_adversarial_file, embeddings_file, texts_file, output_file):
+
+    #  normalized adversarial embeddings
+    adversarial_df = pd.read_csv(normalized_adversarial_file)
+    adversarial_df['generated_mimicry_embedding'] = adversarial_df['generated_mimicry_embedding'].apply(ast.literal_eval)
+
+    #  original embeddings and texts
+    original_data_df = load_embeddings(embeddings_file, texts_file)
+
+    three_way_data = []
+
+    for _, adv_row in adversarial_df.iterrows():
+        author = adv_row['author']
+        adversarial_text = adv_row['original_text']
+        mimicry_embedding = adv_row['generated_mimicry_embedding']
+
+        # Find the matching original text and embedding
+        matching_original = original_data_df[original_data_df['author'] == author]
+        
+        match_found = False
+        for _, orig_row in matching_original.iterrows():
+            if find_matching_text(orig_row['cleaned_text'], adversarial_text):
+                three_way_data.append({
+                    'author': author,
+                    'original_text': orig_row['cleaned_text'],
+                    'original_embedding': orig_row['embedding'],
+                    'adversarial_embedding': mimicry_embedding
+                })
+                match_found = True
+                break
+        
+        if not match_found:
+            print(f"Warning: No matching original text found for author {author}")
+
+    # Create, save three-way dataframe
+    three_way_df = pd.DataFrame(three_way_data)
+    three_way_df.to_csv(output_file, index=False)
+    print(f"Three-way dataframe saved to {output_file}")
+    
+    return three_way_df
+
+# Usage
+normalized_adversarial_file = 'path/to/normalized_adversarial_embeddings.csv'
+embeddings_file = 'path/to/original_embeddings.csv'
+texts_file = 'path/to/original_texts.csv'
+output_file = 'three_way_dataframe.csv'
+
+"""
+This script creates a three-way dataframe that links:
+1. The original text from an author
+2. The normalized embedding representation of that original text
+3. The corresponding adversarial (mimicry) embedding
+
+The purpose is to facilitate analysis of how well the adversarial samples
+mimic the original author's style, by providing direct comparisons between
+the original and adversarial embeddings for each text.
+
+The resulting dataframe allows researchers to:
+1. Compare original and adversarial embeddings directly
+2. Analyze which stylometric features are most affected by the mimicry attempt
+3. Evaluate the effectiveness of the adversarial generation process
+4. Develop and test robustness measures for authorship attribution systems
+"""
+
+three_way_df = create_three_way_dataframe(normalized_adversarial_file, embeddings_file, texts_file, output_file)
+
+print(three_way_df.head())
+
+# Check for any unmatched texts
+unmatched_count = adversarial_df.shape[0] - three_way_df.shape[0]
+print(f"Number of unmatched texts: {unmatched_count}")
