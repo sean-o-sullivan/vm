@@ -1,8 +1,8 @@
 import pandas as pd
 import ast
 
-df_a = pd.read_csv('AGG_csv_a_with_embeddings.csv')
-df_b = pd.read_csv('Final-Triplets_G_30_|2|_VTL5_C3.csv')
+df_a = pd.read_csv('/home/aiadmin/Desktop/code/vm/embeddingGen/working/clean/AGG_csv_a_with_embeddings.csv')
+df_b = pd.read_csv('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/Final-Triplets_G_30_|2|_VTL5_C3.csv')
 
 df_s = pd.DataFrame(columns=['anchor_embedding', 'mimic_GPT3AGG_embedding', 'mimic_GPT4TAGG_embedding', 
                              'mimic_GPT4oAGG_embedding', 'topic_GPT3AGG_embedding', 
@@ -28,7 +28,8 @@ for index, row in df_a.iterrows():
                 'topic_GPT4oAGG_embedding': row['topic_GPT4oAGG_embedding']
             }
             
-            df_s = df_s.append(new_row, ignore_index=True)
+            df_s = pd.concat([df_s, new_row], ignore_index=True)
+
 df_s.to_csv('output_S.csv', index=False)
 
 print("Processing complete. Output saved to 'output_S.csv'.")
