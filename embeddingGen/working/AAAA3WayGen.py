@@ -3,6 +3,7 @@ import numpy as np
 import ast
 import os
 
+print("pleaes")
 def load_embeddings(embeddings_file, texts_file):
 
     embeddings_df = pd.read_csv(embeddings_file)
