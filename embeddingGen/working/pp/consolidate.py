@@ -45,7 +45,8 @@ def consolidate_embeddings(file_paths, output_file):
 
 if __name__ == "__main__":
     file_paths = [
-        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv',
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/ABB_30.csv',  #this is the file path with the raw texts
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv',  #this is the file path with the raw embeddings
         '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT3ABB_30_embeddings.csv',
         '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT3ABB_30_embeddings.csv',
         '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT4TABB_30_embeddings.csv',
