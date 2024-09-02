@@ -22,29 +22,21 @@ if __name__ == "__main__":
 
     texts_author_counts = texts_df['author'].value_counts()
     embeddings_author_counts = embeddings_df['author'].value_counts()
-
-    missing_in_texts = []
-    missing_in_embeddings = []
-
-    for author in embeddings_author_counts.index:
-        if author not in texts_author_counts:
-            missing_in_texts.append(author)
-        elif embeddings_author_counts[author] != texts_author_counts[author]:
-            missing_in_texts.append(author)
-
+    author_with_missing_occurrence = None
     for author in texts_author_counts.index:
-        if author not in embeddings_author_counts:
-            missing_in_embeddings.append(author)
-        elif texts_author_counts[author] != embeddings_author_counts[author]:
-            missing_in_embeddings.append(author)
+        if texts_author_counts[author] != embeddings_author_counts.get(author, 0):
+            difference = texts_author_counts[author] - embeddings_author_counts.get(author, 0)
+            if abs(difference) == 1:
+                author_with_missing_occurrence = author
+                break
 
-    if missing_in_texts:
-        print(f"Authors present in embeddings but missing in texts or have mismatched counts: {missing_in_texts}")
-    if missing_in_embeddings:
-        print(f"Authors present in texts but missing in embeddings or have mismatched counts: {missing_in_embeddings}")
+    if author_with_missing_occurrence:
+        print(f"Author with a missing occurrence: {author_with_missing_occurrence}")
+    else:
+        print("No author with a missing occurrence was found.")
 
     if len(texts_df) != len(embeddings_df):
-        raise ValueError("The number of rows in the texts and embeddings DataFrames still do not match after checking for missing authors.")
+        raise ValueError("The number of rows in the texts and embeddings DataFrames still do not match after checking for missing occurrences.")
     
     texts_df['embeddings'] = embeddings_df['embeddings']
     output_file = 'combined_texts_and_embeddings.csv'
