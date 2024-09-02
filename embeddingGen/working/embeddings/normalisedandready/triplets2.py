@@ -48,7 +48,7 @@ def generate_combinations_for_author(author_texts, author_id):
 
     return combinations_list, context_embeddings_list
 
-datasetpath = "GG_70.csv"
+datasetpath = "GG_30.csv"
 df = pd.read_csv(datasetpath)
 of = os.path.splitext(datasetpath)[0]
 suffix = of[-4:] if len(of) >= 4 else of
@@ -91,7 +91,8 @@ print("\nFinal triplet structure:")
 print(combined_df.head())
 print(f"\nTotal triplets: {len(combined_df)}")
 triplets_shuffled = combined_df.sample(frac=1).reset_index(drop=True)
-output_file = f"Final-Triplets_{suffix}_|_VTL{virtual_text_limit}_C{combination_value}.csv"
+
+output_file = f"Final-Triplets_{suffix}_|2|_VTL{virtual_text_limit}_C{combination_value}.csv"
 triplets_shuffled.to_csv(output_file, index=False)
 
 print(f"Triplet dataset is saved to {output_file}")

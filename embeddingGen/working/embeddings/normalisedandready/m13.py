@@ -90,8 +90,11 @@ optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
 current_dir = os.getcwd()
-train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+# train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
+# val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+
+train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
