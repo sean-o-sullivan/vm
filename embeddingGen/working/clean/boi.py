@@ -34,16 +34,18 @@ def combine_csvs(original_file, mimic_files, topic_files, output_file):
 
 if __name__ == "__main__":
     original_file = 'combined_data.csv'
-    mimic_files = [
-        'normalized_mimicry_samples_GPT3ABB_30_embeddings.csv',
-        'normalized_mimicry_samples_GPT4TABB_30_embeddings.csv',
-        'normalized_mimicry_samples_GPT4oABB_30_embeddings.csv'
-    ]
-    topic_files = [
-        'normalized_topic_based_samples_GPT3ABB_30_embeddings.csv',
-        'normalized_topic_based_samples_GPT4TABB_30_embeddings.csv',
-        'normalized_topic_based_samples_GPT4oABB_30_embeddings.csv'
-    ]
+    mimic_files = {
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT3ABB_30_embeddings.csv',
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT4TABB_30_embeddings.csv',
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT4oABB_30_embeddings.csv'
+    }
+    
+    topic_files = {
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT3ABB_30_embeddings.csv',
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT4TABB_30_embeddings.csv',
+        '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT4oABB_30_embeddings.csv'
+    }
+
     output_file = 'combined_embeddings.csv'
 
     combine_csvs(original_file, mimic_files, topic_files, output_file)
