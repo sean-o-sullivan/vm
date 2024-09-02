@@ -45,7 +45,7 @@ class EnhancedEncoder(nn.Module):
         x = self.relu(self.bn3(self.fc3(x)))
         x = self.dropout(x)
         x = self.bn4(self.fc4(x))
-        return F.normalize(x, p=2, dim=1)  # L2
+        return F.normalize(x, p=2, dim=1)  # L2 normalization
 
 class EnhancedSiameseNetwork(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -74,7 +74,7 @@ class TripletDataset(Dataset):
                 torch.tensor(positive_embedding, dtype=torch.float32),
                 torch.tensor(negative_embedding, dtype=torch.float32))
 
-#
+# Hyperparameters
 input_size = 112
 hidden_size = 256
 lr = 0.001
@@ -83,8 +83,7 @@ num_epochs = 200
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 
-# 
-margin = 0.05
+margin = 0.3
 criterion = nn.MarginRankingLoss(margin=margin)
 optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
@@ -106,6 +105,7 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         optimizer.zero_grad()
         
         anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
+        
         dist_pos = F.pairwise_distance(anchor_out, positive_out)
         dist_neg = F.pairwise_distance(anchor_out, negative_out)
         target = torch.ones(anchor_out.size(0)).to(device)
@@ -179,7 +179,7 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.99):
     
     return avg_loss, mean_pos_dist, mean_neg_dist, std_pos_dist, std_neg_dist, overlap_percentage, auc, overall_accuracy, threshold, positive_accuracy, negative_accuracy
 
-# Best model track
+# Best model tracking
 best_accuracy = float('-inf')
 best_model_path = None
 
@@ -221,6 +221,8 @@ for epoch in range(num_epochs):
             'negative_accuracy': neg_acc
         }, best_model_path)
         print(f"New best model found and saved at epoch {epoch+1} with Accuracy: {accuracy:.4f}")
+    
+    # Regular saving every 10 epochs
     if (epoch + 1) % 10 == 0:
         model_save_path = f"{current_dir}/distance_siamese_model_epoch_{epoch+1}.pth"
         torch.save({

@@ -76,14 +76,26 @@ def create_comprehensive_dataframe(original_embeddings_file, original_texts_file
     return comprehensive_df
 
 # Usage
-original_embeddings_file = 'path/to/original_embeddings.csv'
-original_texts_file = 'path/to/original_texts.csv'
-gpt3_mimic_file = 'path/to/gpt3_mimic_embeddings.csv'
-gpt3_raw_file = 'path/to/gpt3_raw_embeddings.csv'
-gpt4t_mimic_file = 'path/to/gpt4t_mimic_embeddings.csv'
-gpt4t_raw_file = 'path/to/gpt4t_raw_embeddings.csv'
-gpt4o_mimic_file = 'path/to/gpt4o_mimic_embeddings.csv'
-gpt4o_raw_file = 'path/to/gpt4o_raw_embeddings.csv'
+
+#we shall do ABB first
+original_embeddings_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv'
+original_texts_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/ABB_30.csv'
+gpt3_mimic_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT3ABB_30_embeddings.csv'
+
+
+gpt3_raw_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT3ABB_30_embeddings.csv'
+
+gpt4t_mimic_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT4TABB_30_embeddings.csv'
+
+gpt4t_raw_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT4TABB_30_embeddings.csv'
+
+gpt4o_mimic_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT4oABB_30_embeddings.csv'
+
+
+gpt4o_raw_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT4TABB_30_embeddings.csv'
+
+
+
 output_file = 'comprehensive_dataframe.csv'
 
 comprehensive_df = create_comprehensive_dataframe(
