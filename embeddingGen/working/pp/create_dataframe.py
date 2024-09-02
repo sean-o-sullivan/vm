@@ -1,6 +1,7 @@
 from load_data import load_all_data
 from process_data import create_author_data, process_adversarial_embeddings, create_comprehensive_df
 from utils import save_to_csv
+import pandas as pd
 
 def create_comprehensive_dataframe(original_embeddings_file, original_texts_file,
                                    gpt3_mimic_file, gpt3_raw_file,
