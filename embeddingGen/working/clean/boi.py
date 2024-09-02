@@ -1,14 +1,21 @@
 import pandas as pd
 import ast
 import random
+import os
 
 def load_csv(file):
-    return pd.read_csv(file)
+    try:
+        df = pd.read_csv(file)
+        return df
+    except Exception as e:
+        print(f"Error loading {file}: {e}")
+        return None
 
 def string_to_list(s):
     try:
         return ast.literal_eval(s)
-    except:
+    except Exception as e:
+        print(f"Error converting string to list: {e}")
         return s
 
 def combine_csvs(mimics, topics, output):
@@ -22,14 +29,21 @@ def combine_csvs(mimics, topics, output):
         df.at[i, 'original_text'] = source_df.at[i, 'original_text']
     
     for i, file in enumerate(mimics):
-        model_name = file.split('_')[3]  # Extracting GPT model name from the filename
+        model_name = os.path.basename(file).split('_')[2]  # Extracting GPT model name from the filename
         column_name = f'mimic_{model_name}_embedding'
-        df[column_name] = mimic_dfs[i]['embedding'].apply(string_to_list)
+        if 'embedding' in mimic_dfs[i].columns:
+            df[column_name] = mimic_dfs[i]['embedding'].apply(string_to_list)
+        else:
+            print(f"Missing 'embedding' column in {file}")
     
     for i, file in enumerate(topics):
-        model_name = file.split('_')[3] 
+        model_name = os.path.basename(file).split('_')[3]  # Extracting GPT model name from the filename
         column_name = f'topic_{model_name}_embedding'
-        df[column_name] = topic_dfs[i]['embedding'].apply(string_to_list)
+        if 'embedding' in topic_dfs[i].columns:
+            df[column_name] = topic_dfs[i]['embedding'].apply(string_to_list)
+        else:
+            print(f"Missing 'embedding' column in {file}")
+        print(f"Final columns in the DataFrame: {df.columns}")
     df.to_csv(output, index=False)
 
 if __name__ == "__main__":
