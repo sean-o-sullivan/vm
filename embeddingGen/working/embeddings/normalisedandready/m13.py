@@ -93,8 +93,12 @@ current_dir = os.getcwd()
 # train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
 # val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
 
-train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
+
+train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+
+# train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
+# val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -208,7 +212,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far based on accuracy
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-        best_model_path = f"{current_dir}/best_distance_siamese_model.pth"
+        best_model_path = f"{current_dir}/BnG_2_best_distance_siamese_model.pth"
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': siamese_net.state_dict(),

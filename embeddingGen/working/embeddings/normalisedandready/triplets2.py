@@ -45,14 +45,12 @@ def generate_combinations_for_author(author_texts, author_id):
                     'author': author_id
                 })
                 context_embeddings_list.append(context_embedding)
-
     return combinations_list, context_embeddings_list
 
-datasetpath = "GG_30.csv"
+datasetpath = "BB_70.csv"
 df = pd.read_csv(datasetpath)
 of = os.path.splitext(datasetpath)[0]
 suffix = of[-4:] if len(of) >= 4 else of
-
 print("Author column type:", df['author'].dtype)
 
 all_combinations, all_context_embeddings = generate_all_combinations(df)
@@ -103,12 +101,11 @@ print("First few rows of the output file:")
 print(df_verify.head())
 
 if df_verify.isnull().values.any():
-    print("Warning: Output contains null values")
+    print("Warning!: Output contains null values")
 else:
     print("No null values found in the output")
-
 if len(df_verify.columns) != 3:
-    print(f"Warning: Expected 3 columns, but found {len(df_verify.columns)}")
+    print(f"Warning!: Expected 3 columns, but found {len(df_verify.columns)}")
 else:
     print("Correct number of columns (3) in the output")
 
@@ -120,4 +117,4 @@ for column in df_verify.columns:
         ast.literal_eval(sample_row[column])
         print(f"  - Correctly formatted as a list-like string")
     except:
-        print(f"  - WARNING: Not correctly formatted as a list-like string")
+        print(f"  - WARNING!: Not correctly formatted as a list-like string")
