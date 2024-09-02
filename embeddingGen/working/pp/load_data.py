@@ -20,11 +20,13 @@ def load_adversarial_embeddings(file_path, embedding_col):
     print(f"Loading adversarial embeddings from {file_path}")
     df = load_from_csv(file_path)
     print(f"Dataframe shape: {df.shape}")
+    if embedding_col in df.columns:
+        df[embedding_col] = df[embedding_col].apply(lambda x: x if isinstance(x, list) else ast.literal_eval(x))
     return df
 
 def load_all_data(original_embeddings_file, original_texts_file, adversarial_files):
 
-    print("Loading all data")
+    print("Loading all of the data")
     data = {
         'original': load_embeddings(original_embeddings_file, original_texts_file)
     }
@@ -35,5 +37,5 @@ def load_all_data(original_embeddings_file, original_texts_file, adversarial_fil
         data[adv_type] = load_adversarial_embeddings(file_path, embedding_col)
         save_to_csv(data[adv_type], f'{adv_type}_data.csv')
     
-    print("All data is loaded successfully")
+    print("All data is loaded, finally, successfully")
     return data
