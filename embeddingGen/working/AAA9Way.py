@@ -31,13 +31,24 @@ def load_embeddings(embeddings_file, texts_file):
     # The final DataFrame will have columns: 'author', 'cleaned_text', 'embedding'
     return combined_df[['author', 'cleaned_text', 'embedding']]
 
-def find_matching_text(adversarial_original_text, original_text, char_limit=1000):
+def find_matching_text(adversarial_original_text, original_text, char_limit=100):
 
     adversarial_substr = adversarial_original_text[:char_limit]
     original_substr = original_text[:char_limit]
-    print(f"Comparing:\nAdversarial: {adversarial_substr[:100]}...\nOriginal: {original_substr[:100]}...")
+    # print(f"Comparing:\nAdversarial: {adversarial_substr}...\nOriginal: {original_substr}...")
+    # print("\n")
+
+    original_substr = original_substr[3:92]
+    adversarial_substr = adversarial_substr[1:90]
+    # print(f"Original Substring: {original_substr}")
+    # print(f"Adversarial Substring: {adversarial_substr}")
+
+
     match = adversarial_substr == original_substr
-    print(f"Match result: {match}")
+    # print("\n")
+    # print(f"Match result: {match}")
+    #input("")
+
     return match
 
 def load_adversarial_embeddings(file_path, embedding_column):
@@ -95,6 +106,7 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
             # Find matching original text
             matching_rows = comprehensive_df[comprehensive_df['cleaned_text'].apply(
                 lambda x: find_matching_text(adv_row['original_text'], x)
+                
             )]
             
             print(f"Number of matching rows found: {len(matching_rows)}")
@@ -107,10 +119,12 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
                 print(f"Original text (first 100 chars): {adv_row['original_text'][:100]}")
                 print(f"Matched text (first 100 chars): {comprehensive_df.at[matching_index, 'cleaned_text'][:100]}")
             else:
-                print(f"Warning: No matching original text found for {adv_type} embedding at index {idx}")
-                print(f"Unmatched text (first 100 chars): {adv_row['original_text'][:100]}")
-                print("Sample of comprehensive_df['cleaned_text'] (first 5 rows):")
-                print(comprehensive_df['cleaned_text'].head())
+                pass
+                # print(f"Warning: No matching original text found for {adv_type} embedding at index {idx}")
+                # print(f"Unmatched text (first 100 chars): {adv_row['original_text'][:100]}")
+                # print("Sample of comprehensive_df['cleaned_text'] (first 5 rows):")
+                # print(comprehensive_df['cleaned_text'].head())
+                #input("")
 
         print(f"Finished processing {adv_type} embeddings")
         print(f"Number of matches found: {comprehensive_df[adv_type].notna().sum()}")
