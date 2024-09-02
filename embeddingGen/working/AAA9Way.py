@@ -45,23 +45,21 @@ def load_adversarial_embeddings(file_path, embedding_column):
     df[embedding_column] = df[embedding_column].apply(ast.literal_eval)
     return df
 
+
+
 def create_comprehensive_dataframe(original_texts_file, original_embeddings_file,
                                    gpt3_mimic_file, gpt3_raw_file,
                                    gpt4t_mimic_file, gpt4t_raw_file,
                                    gpt4o_mimic_file, gpt4o_raw_file,
                                    output_file):
+
     print("Creating comprehensive dataframe")
     
     #  original embeddings and texts
     original_data_df = load_embeddings(original_embeddings_file, original_texts_file)
     print(f"Original data shape: {original_data_df.shape}")
 
-    # Initialize the comprehensive dataframe with original data
-    comprehensive_df = original_data_df.copy()
-    comprehensive_df = comprehensive_df.rename(columns={'embedding': 'original_embedding'})
-    comprehensive_df.set_index('author', inplace=True)
-
-    # Load all adversarial embeddings
+    # Load all adversarial embeddings and collect used original texts
     adversarial_dfs = {
         'gpt3_mimic': load_adversarial_embeddings(gpt3_mimic_file, 'generated_mimicry_embedding'),
         'gpt3_raw': load_adversarial_embeddings(gpt3_raw_file, 'generated_text_embedding'),
@@ -70,7 +68,18 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
         'gpt4o_mimic': load_adversarial_embeddings(gpt4o_mimic_file, 'generated_mimicry_embedding'),
         'gpt4o_raw': load_adversarial_embeddings(gpt4o_raw_file, 'generated_text_embedding')
     }
+    used_original_texts = set()
+    for adv_df in adversarial_dfs.values():
+        used_original_texts.update(adv_df['original_text'].str[:100].tolist())  # Using first 100 chars for comparison
 
+    # Filter original_data_df to include only used samples
+    comprehensive_df = original_data_df[original_data_df['cleaned_text'].str[:100].isin(used_original_texts)].copy()
+    comprehensive_df = comprehensive_df.rename(columns={'embedding': 'original_embedding'})
+    comprehensive_df.set_index('author', inplace=True)
+
+    print(f"Filtered comprehensive data shape: {comprehensive_df.shape}")
+
+    # Process each type of adversarial embedding
     for adv_type, adv_df in adversarial_dfs.items():
         print(f"\nProcessing {adv_type} embeddings")
         embedding_col = 'generated_mimicry_embedding' if 'mimic' in adv_type else 'generated_text_embedding'
@@ -82,9 +91,7 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
                 print(f"Processing row {idx} of {adv_type}")
             
             # Find matching original text
-            matching_rows = comprehensive_df[comprehensive_df['cleaned_text'].apply(
-                lambda x: find_matching_text(adv_row['original_text'], x)
-            )]
+            matching_rows = comprehensive_df[comprehensive_df['cleaned_text'].str[:100] == adv_row['original_text'][:100]]
             
             if not matching_rows.empty:
                 # If match found, add the adversarial embedding to the comprehensive dataframe
@@ -104,8 +111,8 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
     
     return comprehensive_df
 
-# Usage.
-print("Setting up the file paths")
+# Usage
+print("Setting up file paths")
 
 #  paths
 original_embeddings_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/BB_30.csv'
