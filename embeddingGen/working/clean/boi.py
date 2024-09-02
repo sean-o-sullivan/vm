@@ -20,6 +20,7 @@ def string_to_list(s):
         print(f"Error converting string to list: {e}")
         return s
 
+
 def combine_csvs(mimics, topics, output):
     print("Starting combine_csvs function")
     
@@ -34,7 +35,7 @@ def combine_csvs(mimics, topics, output):
     print("Processing mimic embeddings:")
     for i, file in enumerate(mimics):
         print(f"Processing mimic file: {file}")
-        model_name = os.path.basename(file).split('_')[2]  # Adjust this index if necessary
+        model_name = os.path.basename(file).split('_')[3].split('.')[0]
         print(f"Extracted model name: {model_name}")
         column_name = f'mimic_{model_name}_embedding'
         print(f"Created column name: {column_name}")
@@ -48,7 +49,7 @@ def combine_csvs(mimics, topics, output):
     print("Processing topic embeddings:")
     for i, file in enumerate(topics):
         print(f"Processing topic file: {file}")
-        model_name = os.path.basename(file).split('_')[3]  # Adjust this index if necessary
+        model_name = os.path.basename(file).split('_')[4].split('.')[0]
         print(f"Extracted model name: {model_name}")
         column_name = f'topic_{model_name}_embedding'
         print(f"Created column name: {column_name}")
@@ -63,6 +64,8 @@ def combine_csvs(mimics, topics, output):
     print(f"Saving combined DataFrame to {output}")
     df.to_csv(output, index=False)
     print("Combine_csvs function completed")
+
+
 
 if __name__ == "__main__":
     mimics = [
