@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-from utils import save_to_csv
+from utils import save_to_csv, load_from_csv
 
 def load_embeddings(embeddings_file, texts_file):
 
     print(f"Loading embeddings from {embeddings_file}")
-    embeddings_df = pd.read_csv(embeddings_file)
+    embeddings_df = load_from_csv(embeddings_file)
     print(f"Embeddings shape: {embeddings_df.shape}")
     print(f"Loading texts from {texts_file}")
     texts_df = pd.read_csv(texts_file)
@@ -18,10 +18,8 @@ def load_embeddings(embeddings_file, texts_file):
 def load_adversarial_embeddings(file_path, embedding_col):
 
     print(f"Loading adversarial embeddings from {file_path}")
-    df = pd.read_csv(file_path)
-    print(f"Dataframe shape before processing: {df.shape}")
-    df[embedding_col] = df[embedding_col].apply(eval).apply(np.array)
-    print(f"Dataframe shape after processing: {df.shape}")
+    df = load_from_csv(file_path)
+    print(f"Dataframe shape: {df.shape}")
     return df
 
 def load_all_data(original_embeddings_file, original_texts_file, adversarial_files):
