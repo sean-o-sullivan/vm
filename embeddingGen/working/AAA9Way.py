@@ -8,11 +8,13 @@ print("Script execution started")
 def load_embeddings(embeddings_file, texts_file):
     print(f"Loading embeddings from {embeddings_file}")
     embeddings_df = pd.read_csv(embeddings_file)
-    print(f"Embeddings shape: {embeddings_df.shape}")
+    print(f"Embeddings DF shape: {embeddings_df.shape}")
+    print(f"Embeddings DF head: {embeddings_df.head()}")
     
     print(f"Loading texts from {texts_file}")
     texts_df = pd.read_csv(texts_file)
-    print(f"Texts shape: {texts_df.shape}")
+    print(f"Texts DF shape: {texts_df.shape}")
+    print(f"Texts DF head: {texts_df.head()}")
     
     print("Merging embeddings and texts")
     combined_df = pd.merge(embeddings_df, texts_file=texts_df, on='author', how='inner')
