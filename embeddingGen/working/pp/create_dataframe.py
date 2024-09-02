@@ -64,7 +64,7 @@ if __name__ == "__main__":
       gpt3_mimic_file, gpt3_raw_file,
       gpt4t_mimic_file, gpt4t_raw_file,
       gpt4o_mimic_file, gpt4o_raw_file,
-      output_file
+      "comprehensive_dataframe.csv"
     )
 
     print("Main execution complete")
