@@ -57,13 +57,14 @@ if __name__ == "__main__":
     gpt4t_raw_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT4TABB_30_embeddings.csv'
     gpt4o_mimic_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT4oABB_30_embeddings.csv'
     gpt4o_raw_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_topic_based_samples_GPT4TABB_30_embeddings.csv'
-  
-    create_comprehensive_dataframe(
-        'original_embeddings.csv', 'original_texts.csv',
-        'gpt3_mimic.csv', 'gpt3_raw.csv',
-        'gpt4t_mimic.csv', 'gpt4t_raw.csv',
-        'gpt4o_mimic.csv', 'gpt4o_raw.csv',
-        'comprehensive_dataframe.csv'
+
+
+    comprehensive_df = create_comprehensive_dataframe(
+      original_embeddings_file, original_texts_file,
+      gpt3_mimic_file, gpt3_raw_file,
+      gpt4t_mimic_file, gpt4t_raw_file,
+      gpt4o_mimic_file, gpt4o_raw_file,
+      output_file
     )
 
     print("Main execution complete")
