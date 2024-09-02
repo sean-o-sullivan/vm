@@ -2,7 +2,7 @@ import pandas as pd
 
 def load_original_data(combined_data_file):
 
-    print(f"Loading combined data from {combined_data_file}")
+    print(f"Loading the combined data from {combined_data_file}")
     combined_data_df = pd.read_csv(combined_data_file)
     return combined_data_df[['author', 'original_text', 'embedding']]
 
@@ -25,6 +25,7 @@ def create_comprehensive_dataframe(combined_data_file, mimic_files, topic_files,
     for i, row in original_data_df.iterrows():
         author = row['author']
         original_text = row['original_text']
+        print(f"the original text is: {original_text}")
         original_embedding = row['embedding']
         
         combined_row = {
@@ -64,7 +65,8 @@ def create_comprehensive_dataframe(combined_data_file, mimic_files, topic_files,
 
 if __name__ == "__main__":
     print("Starting main execution")
-    combined_data_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/combined_data.csv'
+    
+    combined_data_file = '/home/aiadmin/Desktop/code/vm/embeddingGen/working/clean/combined_data.csv'
     
     mimic_files = {
         'gpt3_mimic': '/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_mimicry_samples_GPT3ABB_30_embeddings.csv',
