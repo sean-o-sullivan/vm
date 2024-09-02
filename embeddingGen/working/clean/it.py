@@ -18,8 +18,7 @@ def create_comprehensive_dataframe(combined_data_file, mimic_files, topic_files,
 
     print("Loading original data...")
     original_data_df = load_original_data(combined_data_file)
-    print("Original data loaded.")
-        print("Loading all embeddings CSVs...")
+    print("Original data loaded. Loading all embeddings CSVs...")
     mimic_embeddings = {name: load_csv(file, 'generated_mimicry_embedding') for name, file in mimic_files.items()}
     topic_embeddings = {name: load_csv(file, 'generated_text_embedding') for name, file in topic_files.items()}
     print("All embeddings CSVs loaded.")
