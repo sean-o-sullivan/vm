@@ -15,7 +15,12 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
         raise ValueError("No recognized embedding column found in the CSV. :/")
 
     def normalize_embedding(embedding_str):
-        embedding = ast.literal_eval(embedding_str)
+        try:
+            embedding = ast.literal_eval(embedding_str)
+        except:
+            print(f"Error parsing embedding: {embedding_str}")
+            return embedding_str  # Return original string if parsing fails
+        
         normalized_embedding = []
         
         for i, value in enumerate(embedding):
@@ -37,7 +42,8 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
                 
                 normalized_embedding.append(normalized_value)
         
-        return normalized_embedding  # Return as a list, not a string .....
+        return str(normalized_embedding)  # Convert back to string for CSV storage.........
+    # Normalize only the embedding
     df[embedding_column] = df[embedding_column].apply(normalize_embedding)
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, f"normalized_{os.path.basename(csv_path)}")
