@@ -70,10 +70,10 @@ def create_comprehensive_dataframe(original_texts_file, original_embeddings_file
     }
     used_original_texts = set()
     for adv_df in adversarial_dfs.values():
-        used_original_texts.update(adv_df['original_text'].str[:100].tolist())  # Using first 100 chars for comparison
+        used_original_texts.update(adv_df['original_text'].str[1:100].tolist())  # Using first 100 chars for comparison
 
     # Filter original_data_df to include only used samples
-    comprehensive_df = original_data_df[original_data_df['cleaned_text'].str[:100].isin(used_original_texts)].copy()
+    comprehensive_df = original_data_df[original_data_df['cleaned_text'].str[3:102].isin(used_original_texts)].copy()
     comprehensive_df = comprehensive_df.rename(columns={'embedding': 'original_embedding'})
     comprehensive_df.set_index('author', inplace=True)
 
