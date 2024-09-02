@@ -12,7 +12,6 @@ def load_embeddings(file_path):
     return df
 
 def create_adversarial_eval_set(normalized_adversarial_file, triplets_file, three_way_df_file, output_dir):
-
     adversarial_df = pd.read_csv(normalized_adversarial_file)
     adversarial_df['generated_mimicry_embedding'] = adversarial_df['generated_mimicry_embedding'].apply(ast.literal_eval)
     triplets_df = load_embeddings(triplets_file)
