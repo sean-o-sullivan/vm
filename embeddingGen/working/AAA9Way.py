@@ -32,9 +32,12 @@ def find_matching_text(adversarial_original_text, original_text, char_limit=100)
     adversarial_substr = adversarial_original_text[:char_limit]
     original_substr = original_text[:char_limit]
 
-    original_substr = original_substr[3:92]
-    adversarial_substr = adversarial_substr[1:90]
+    original_substr = original_substr[5:94]
+    adversarial_substr = adversarial_substr[3:92]
 
+    print(f"original: {original_substr}")
+    print('\n')
+    print(f"advarsarial: {adversarial_substr}")
     return adversarial_substr == original_substr
 
 def load_adversarial_embeddings(file_path, embedding_column):
