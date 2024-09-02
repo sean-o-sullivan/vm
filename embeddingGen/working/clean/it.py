@@ -12,7 +12,7 @@ def load_original_data(embeddings_file, texts_file):
     texts_df = pd.read_csv(texts_file)
     combined_df = pd.merge(embeddings_df, texts_df, on='author', how='inner')
     
-    return combined_df[['author', 'cleaned_text', 'embedding']]
+    return combined_df[['author', 'original_text', 'embedding']]
 
 def load_csv(file_path, embedding_column):
 
@@ -40,7 +40,7 @@ def create_comprehensive_dataframe(original_embeddings_file, original_texts_file
     for i in range(min_length):
         combined_row = {
             'author': original_data_df.loc[i, 'author'],
-            'original_text': original_data_df.loc[i, 'cleaned_text'],
+            'original_text': original_data_df.loc[i, 'original_text'],
             'original_embedding': original_data_df.loc[i, 'embedding']
         }
 
