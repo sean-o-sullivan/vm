@@ -74,7 +74,7 @@ class TripletDataset(Dataset):
                 torch.tensor(positive_embedding, dtype=torch.float32),
                 torch.tensor(negative_embedding, dtype=torch.float32))
 
-
+#
 input_size = 112
 hidden_size = 256
 lr = 0.001
@@ -83,12 +83,11 @@ num_epochs = 200
 
 siamese_net = EnhancedSiameseNetwork(input_size, hidden_size).to(device)
 
-# MarginRankingLoss
+# 
 margin = 0.05
 criterion = nn.MarginRankingLoss(margin=margin)
 optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
-
 
 current_dir = os.getcwd()
 train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
@@ -96,7 +95,6 @@ val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
-
 
 def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
     siamese_model.train()
@@ -120,8 +118,9 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
     return running_loss / len(dataloader)
 
-def evaluate(siamese_model, dataloader, device, threshold):
+def evaluate(siamese_model, dataloader, criterion, device, threshold=0.5):
     siamese_model.eval()
+    running_loss = 0.0
     all_positive_distances = []
     all_negative_distances = []
     positive_correct = 0
@@ -129,8 +128,9 @@ def evaluate(siamese_model, dataloader, device, threshold):
     total_positive = 0
     total_negative = 0
     
+    pbar = tqdm(dataloader, desc="Evaluating")
     with torch.no_grad():
-        for anchor, positive, negative in tqdm(dataloader, desc="Evaluating"):
+        for anchor, positive, negative in pbar:
             anchor, positive, negative = anchor.to(device), positive.to(device), negative.to(device)
             
             anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
@@ -138,6 +138,12 @@ def evaluate(siamese_model, dataloader, device, threshold):
             dist_pos = F.pairwise_distance(anchor_out, positive_out)
             dist_neg = F.pairwise_distance(anchor_out, negative_out)
             
+            # Calculate triplet loss
+            target = torch.ones(anchor_out.size(0)).to(device)
+            loss = criterion(dist_neg, dist_pos, target)
+            running_loss += loss.item()
+            
+            # Evaluation metrics
             all_positive_distances.extend(dist_pos.cpu().numpy())
             all_negative_distances.extend(dist_neg.cpu().numpy())
             
@@ -146,33 +152,32 @@ def evaluate(siamese_model, dataloader, device, threshold):
             
             total_positive += len(dist_pos)
             total_negative += len(dist_neg)
+            
+            pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
     
-    positive_accuracy = positive_correct / total_positive
-    negative_accuracy = negative_correct / total_negative
-    overall_accuracy = (positive_correct + negative_correct) / (total_positive + total_negative)
+    avg_loss = running_loss / len(dataloader)
+    positive_accuracy = positive_correct / total_positive if total_positive > 0 else 0
+    negative_accuracy = negative_correct / total_negative if total_negative > 0 else 0
+    overall_accuracy = (positive_correct + negative_correct) / (total_positive + total_negative) if (total_positive + total_negative) > 0 else 0
     
     mean_pos_dist = np.mean(all_positive_distances)
     mean_neg_dist = np.mean(all_negative_distances)
     std_pos_dist = np.std(all_positive_distances)
     std_neg_dist = np.std(all_negative_distances)
     
-    # Calculate overlap
+    #  overlap
     overlap_min = max(np.min(all_positive_distances), np.min(all_negative_distances))
     overlap_max = min(np.max(all_positive_distances), np.max(all_negative_distances))
     overlap_range = max(0, overlap_max - overlap_min)
     total_range = max(np.max(all_positive_distances), np.max(all_negative_distances)) - min(np.min(all_positive_distances), np.min(all_negative_distances))
     overlap_percentage = (overlap_range / total_range) * 100 if total_range > 0 else 0
     
-    return {
-        'positive_accuracy': positive_accuracy,
-        'negative_accuracy': negative_accuracy,
-        'overall_accuracy': overall_accuracy,
-        'mean_positive_distance': mean_pos_dist,
-        'mean_negative_distance': mean_neg_dist,
-        'std_positive_distance': std_pos_dist,
-        'std_negative_distance': std_neg_dist,
-        'overlap_percentage': overlap_percentage
-    }
+    #  AUC
+    all_distances = np.concatenate([all_positive_distances, all_negative_distances])
+    all_labels = np.concatenate([np.ones(len(all_positive_distances)), np.zeros(len(all_negative_distances))])
+    auc = roc_auc_score(all_labels, -all_distances)  # Negative because smaller distance = more similar
+    
+    return avg_loss, mean_pos_dist, mean_neg_dist, std_pos_dist, std_neg_dist, overlap_percentage, auc, overall_accuracy, threshold, positive_accuracy, negative_accuracy
 
 # Best model track
 best_accuracy = float('-inf')
@@ -185,7 +190,7 @@ for epoch in range(num_epochs):
     train_loss = train_epoch(siamese_net, train_dataloader, criterion, optimizer, device)
     scheduler.step()
     
-    val_loss, mean_pos_dist, mean_neg_dist, std_pos_dist, std_neg_dist, overlap_percentage, auc, accuracy, threshold = evaluate(siamese_net, val_dataloader, criterion, device)
+    val_loss, mean_pos_dist, mean_neg_dist, std_pos_dist, std_neg_dist, overlap_percentage, auc, accuracy, threshold, pos_acc, neg_acc = evaluate(siamese_net, val_dataloader, criterion, device)
     
     print(f'Epoch {epoch+1}:')
     print(f'Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
@@ -194,7 +199,8 @@ for epoch in range(num_epochs):
     print(f'Distance Difference: {mean_neg_dist - mean_pos_dist:.4f}')
     print(f'Overlap Percentage: {overlap_percentage:.2f}%')
     print(f'AUC: {auc:.4f}')
-    print(f'Accuracy: {accuracy:.4f} (Threshold: {threshold:.4f})')
+    print(f'Overall Accuracy: {accuracy:.4f} (Threshold: {threshold:.4f})')
+    print(f'Positive Accuracy: {pos_acc:.4f}, Negative Accuracy: {neg_acc:.4f}')
     
     # Check if this is the best model so far based on accuracy
     if accuracy > best_accuracy:
@@ -210,7 +216,9 @@ for epoch in range(num_epochs):
             'accuracy': accuracy,
             'auc': auc,
             'overlap_percentage': overlap_percentage,
-            'threshold': threshold
+            'threshold': threshold,
+            'positive_accuracy': pos_acc,
+            'negative_accuracy': neg_acc
         }, best_model_path)
         print(f"New best model found and saved at epoch {epoch+1} with Accuracy: {accuracy:.4f}")
     if (epoch + 1) % 10 == 0:
@@ -223,7 +231,9 @@ for epoch in range(num_epochs):
             'train_loss': train_loss,
             'val_loss': val_loss,
             'accuracy': accuracy,
-            'threshold': threshold
+            'threshold': threshold,
+            'positive_accuracy': pos_acc,
+            'negative_accuracy': neg_acc
         }, model_save_path)
 
 print("Training completed!")
