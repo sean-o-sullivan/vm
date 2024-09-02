@@ -18,4 +18,8 @@ if __name__ == "__main__":
         raise ValueError("The number of rows in the texts and embeddings DataFrames do not match. eek!.")
     
     texts_df['embeddings'] = embeddings_df['embeddings']
+    output_file = 'combined_texts_and_embeddings.csv'
+    texts_df.to_csv(output_file, index=False)
+    
+    print(f"Combined DataFrame saved to {output_file}")
     print(texts_df.head())
