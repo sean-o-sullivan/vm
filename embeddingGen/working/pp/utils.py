@@ -18,7 +18,7 @@ def save_to_csv(df, filename):
 
     for col in df.columns:
         if 'embedding' in col.lower():
-            df[col] = df[col].apply(lambda x: np.array2string(x, separator=',', threshold=np.inf) if isinstance(x, np.ndarray) else x)
+            df[col] = df[col].apply(lambda x: str(x) if isinstance(x, list) else x)
 
     df.to_csv(filename, index=False)
     print(f"Data saved to {filename}")
@@ -32,6 +32,6 @@ def load_from_csv(filename):
 
     for col in df.columns:
         if 'embedding' in col.lower():
-            df[col] = df[col].apply(lambda x: np.array(ast.literal_eval(x)) if isinstance(x, str) else x)
+            df[col] = df[col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
 
     return df
