@@ -32,7 +32,7 @@ def create_comprehensive_dataframe(combined_data_file, mimic_files, topic_files,
         original_text = row['original_text']
         original_embedding = row['embedding']
 
-        print(f"Processing row {i + 1}/{len(original_data_df)} - Author: {author}, Original Text: {original_text}")
+        # print(f"Processing row {i + 1}/{len(original_data_df)} - Author: {author}, Original Text: {original_text}")
 
         combined_row = {
             'author': author,
@@ -42,7 +42,23 @@ def create_comprehensive_dataframe(combined_data_file, mimic_files, topic_files,
         
         match_found = True
         for name, df in mimic_embeddings.items():
-            match = df[(df['author'] == author) & (df['original_text'] == original_text)]
+            
+
+            match = df[df['original_text'].str.contains(original_text, na=False)]
+
+            print("\n")
+            print(f"The 'original_text' being searched for: {str(df['original_text'].tolist()[:5])[:100]}...")  # Printing the first few entries for context
+            print(f"The 'original_text' in the dataframe: {original_text[:100]}")
+            print("\n")
+
+            if not match.empty:
+                print("Match found!")
+                # Additional processing if needed
+            else:
+                print("No match found.")
+            input("Press Enter to continue...")
+
+
             if not match.empty:
                 print(f"Match found in {name} for author {author}.")
                 combined_row[f'embedding_{name}'] = match.iloc[0]['generated_mimicry_embedding']
@@ -53,7 +69,10 @@ def create_comprehensive_dataframe(combined_data_file, mimic_files, topic_files,
         
         if match_found:
             for name, df in topic_embeddings.items():
-                match = df[(df['author'] == author) & (df['original_text'] == original_text)]
+
+                print(df[(df['author'] == author) & (df['original_text'] == original_text)])
+                match = df[(df['original_text'] == original_text)]
+
                 if not match.empty:
                     print(f"Match found in {name} for author {author}.")
                     combined_row[f'embedding_{name}'] = match.iloc[0]['generated_text_embedding']
