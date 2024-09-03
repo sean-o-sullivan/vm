@@ -42,40 +42,21 @@ class SiameseTransformerNetwork(nn.Module):
         negative_out = self.encoder(negative)
         return anchor_out, positive_out, negative_out
     
-
 class EvaluationDataset(Dataset):
     def __init__(self, csv_file, column):
         self.data = pd.read_csv(csv_file)
         self.column = column
-        self.valid_indices = self._get_valid_indices()
-        print(f"Processing column: {column}")
-        print(f"Total samples: {len(self.data)}, Valid samples: {len(self.valid_indices)}")
-        print(f"Skipped {len(self.data) - len(self.valid_indices)} samples due to invalid comparison embeddings.")
-
-    def _get_valid_indices(self):
-        return [i for i, row in self.data.iterrows()
-                if self._is_valid_embedding(row[self.column])]
-
-    def _is_valid_embedding(self, embedding_str):
-        try:
-            embedding = ast.literal_eval(embedding_str)
-            return embedding != [1] and len(embedding) == 112
-        except (ValueError, SyntaxError):
-            return False
 
     def __len__(self):
-        return len(self.valid_indices)
+        return len(self.data)
 
     def __getitem__(self, idx):
-        row = self.data.iloc[self.valid_indices[idx]]
-        anchor_embedding = self._parse_embedding(row['anchor_embedding'])
-        comparison_embedding = self._parse_embedding(row[self.column])
+        row = self.data.iloc[idx]
+        anchor_embedding = ast.literal_eval(row['anchor_embedding'])
+        comparison_embedding = ast.literal_eval(row[self.column])
+        
         return (torch.tensor(anchor_embedding, dtype=torch.float32),
                 torch.tensor(comparison_embedding, dtype=torch.float32))
-
-    def _parse_embedding(self, embedding_str):
-        return ast.literal_eval(embedding_str)
-    
 
 def evaluate_model(model, dataloader, device, threshold=0.99):
     model.eval()
@@ -100,7 +81,7 @@ input_size = 112
 hidden_size = 256
 batch_size = 1 #128, we are doing evaluation, even though it should technically be fine for both, and it is.
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "BnG_10_best_transformer_siamese_model.pth")
+model_path = os.path.join(current_dir, "BnG_2_best_transformer_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device, weights_only=False)
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -116,7 +97,6 @@ embedding_columns = [
 
 print("Starting Evaluation...")
 
-# Prepare CSV file for results
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 results_file = f"dissimilarity_evaluation_results_{timestamp}.csv"
 with open(results_file, 'w', newline='') as csvfile:
@@ -131,8 +111,9 @@ with open(results_file, 'w', newline='') as csvfile:
         print(f"\nEvaluating {column}:")
         eval_dataset = EvaluationDataset('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/GPT/output_S.csv', column)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
+
         distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])#checkpoint['threshold']
-        
+
         # Calculate metrics
         total_samples = len(predictions)
         true_negatives = sum(predictions)
@@ -142,8 +123,7 @@ with open(results_file, 'w', newline='') as csvfile:
         precision = precision_score([1] * total_samples, predictions, zero_division=1)
         recall = recall_score([1] * total_samples, predictions, zero_division=1)
         f1 = f1_score([1] * total_samples, predictions, zero_division=1)
-
-
+        
         true_positive_rate = 0  # We don't expect any true positives
         false_positive_rate = false_positives / total_samples
         
