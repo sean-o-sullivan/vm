@@ -3,6 +3,8 @@ import ast
 from tqdm import tqdm
 import time
 
+#for generating vm's negative class accuracy on the gpt generated samples.
+
 print("Script started. Importing necessary libraries...")
 
 print("Reading File A...")
@@ -30,9 +32,8 @@ for index, row in tqdm(df_a.iterrows(), total=df_a.shape[0], desc="Processing ro
     if not matches.empty:
         total_matches += len(matches)
         for _, match_row in matches.iterrows():
-           anchor_embedding = match_row['anchor_embedding']
-            
-            new_row = pd.DataFrame({
+           anchor_embedding = match_row['anchor_embedding']  
+           new_row = pd.DataFrame({
                 'anchor_embedding': [anchor_embedding],
                 'mimic_GPT3AGG_embedding': [row['mimic_GPT3AGG_embedding']],
                 'mimic_GPT4TAGG_embedding': [row['mimic_GPT4TAGG_embedding']],
@@ -41,15 +42,14 @@ for index, row in tqdm(df_a.iterrows(), total=df_a.shape[0], desc="Processing ro
                 'topic_GPT4TAGG_embedding': [row['topic_GPT4TAGG_embedding']],
                 'topic_GPT4oAGG_embedding': [row['topic_GPT4oAGG_embedding']]
             })
-            
-            df_s = pd.concat([df_s, new_row], ignore_index=True)
+           df_s = pd.concat([df_s, new_row], ignore_index=True)
 
     if (index + 1) % 1000 == 0:
         elapsed_time = time.time() - start_time
         print(f"\nProcessed {index + 1} rows. Elapsed time: {elapsed_time:.2f} seconds")
         print(f"Current matches found: {total_matches}")
         print(f"Current size of output DataFrame S: {df_s.shape}")
-print("\nProcessing is now complete. Saving output to CSV...")
+print("\nProcessing is nowcomplete. Saving output to CSV...")
 output_path = 'output_S.csv'
 df_s.to_csv(output_path, index=False)
 
