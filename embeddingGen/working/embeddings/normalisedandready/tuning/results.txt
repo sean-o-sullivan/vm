@@ -1,0 +1,4 @@
+[I 2024-09-03 01:34:48,941] Trial 1 finished with value: 37.101349234580994 and parameters: {'hidden_size': 288, 'lr': 0.005896191560725717, 'batch_size': 256, 'num_epochs': 17, 'margin': 0.019041791419479755, 'num_layers': 4, 'num_heads': 3, 'dropout': 0.3276078869665794}. Best is trial 1 with value: 37.101349234580994.
+
+[I 2024-09-03 01:59:11,947] Trial 17 finished with value: 31.42067790031433 and parameters: {'hidden_size': 480, 'lr': 0.009572706164457887, 'batch_size': 128, 'num_epochs': 14, 'margin': 0.17925817934056154, 'num_layers': 3, 'num_heads': 16, 'dropout': 0.4157080530141599}. Best is trial 17 with value: 31.42067790031433.
+

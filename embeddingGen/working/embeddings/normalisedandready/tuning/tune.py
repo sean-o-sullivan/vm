@@ -41,9 +41,9 @@ class TransformerEncoder(nn.Module):
         return F.normalize(x, p=2, dim=1)  # L2
 
 class SiameseTransformerNetwork(nn.Module):
-    def __init__(self, input_size, hidden_size):
+    def __init__(self, input_size, hidden_size, num_layers, num_heads, dropout):
         super(SiameseTransformerNetwork, self).__init__()
-        self.encoder = TransformerEncoder(input_size, hidden_size)
+        self.encoder = TransformerEncoder(input_size, hidden_size, num_layers, num_heads, dropout)
 
     def forward(self, anchor, positive, negative):
         anchor_out = self.encoder(anchor)
@@ -151,25 +151,25 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.3):
 def objective(trial):
     # Hyperparameters to be tuned
     input_size = 112  # Fixed
-    hidden_size = trial.suggest_int('hidden_size', 128, 512, step=32)
-    lr = trial.suggest_loguniform('lr', 1e-5, 1e-2)
-    batch_size = trial.suggest_categorical('batch_size', [64, 128, 256])
-    num_epochs = trial.suggest_int('num_epochs', 50, 200)
-    margin = trial.suggest_uniform('margin', 0.01, 0.5)
-    # num_layers = trial.suggest_int('num_layers', 1, 4)
-    # num_heads = trial.suggest_int('num_heads', 2, 8)
-    # dropout = trial.suggest_uniform('dropout', 0.1, 0.5)
+    hidden_size = trial.suggest_int('hidden_size', 128, 1024, step=32)
+    lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
+    batch_size = trial.suggest_categorical('batch_size', [64, 128, 256, 512])
+    num_epochs = trial.suggest_int('num_epochs', 5, 35)
+    margin = trial.suggest_float('margin', 0.01, 0.75)
+    num_layers = trial.suggest_int('num_layers', 1, 6)
+    num_heads = trial.suggest_categorical('num_heads', [2,4,8,16,32])
+    dropout = trial.suggest_float('dropout', 0.1, 0.7)
 
     # Model, loss, and optimizer
-    siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
+    siamese_net = SiameseTransformerNetwork(input_size, hidden_size, num_layers, num_heads, dropout).to(device)
     criterion = nn.MarginRankingLoss(margin=margin)
     optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     # Data loading
     current_dir = os.getcwd()
-    train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
-    val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+    train_dataset = TripletDataset(os.path.join(current_dir, "../BnG_70.csv"))
+    val_dataset = TripletDataset(os.path.join(current_dir, "../BnG_30.csv"))
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -194,7 +194,7 @@ def objective(trial):
 
 if __name__ == "__main__":
     study = optuna.create_study(direction='minimize', pruner=optuna.pruners.MedianPruner())
-    study.optimize(objective, n_trials=50, timeout=3600*12)  # 12 hours timeout
+    study.optimize(objective, n_trials=1000, timeout=3600*24)  # 12 hours timeout
 
     print("Best trial:")
     trial = study.best_trial
@@ -221,8 +221,8 @@ if __name__ == "__main__":
     best_scheduler = CosineAnnealingLR(best_optimizer, T_max=num_epochs)
 
     current_dir = os.getcwd()
-    train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
-    val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+    train_dataset = TripletDataset(os.path.join(current_dir, "../BnG_70.csv"))
+    val_dataset = TripletDataset(os.path.join(current_dir, "../BnG_30.csv"))
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
