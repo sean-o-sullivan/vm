@@ -45,7 +45,7 @@ class EnhancedEncoder(nn.Module):
         x = self.relu(self.bn3(self.fc3(x)))
         x = self.dropout(x)
         x = self.bn4(self.fc4(x))
-        return F.normalize(x, p=2, dim=1)  # L2
+        return F.normalize(x, p=2, dim=1)  # L2 
 
 class EnhancedSiameseNetwork(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -94,8 +94,8 @@ current_dir = os.getcwd()
 # val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
 
 
-train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
 
 # train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|2|_VTL5_C3.csv"))
 # val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|2|_VTL5_C3.csv"))
@@ -113,8 +113,11 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         optimizer.zero_grad()
         
         anchor_out, positive_out, negative_out = siamese_model(anchor, positive, negative)
+        
         dist_pos = F.pairwise_distance(anchor_out, positive_out)
         dist_neg = F.pairwise_distance(anchor_out, negative_out)
+        
+        # Use 1 for positive pairs (should be ranked higher) and -1 for negative pairs
         target = torch.ones(anchor_out.size(0)).to(device)
         
         loss = criterion(dist_neg, dist_pos, target)

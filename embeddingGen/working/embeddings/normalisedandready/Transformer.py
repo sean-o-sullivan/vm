@@ -5,7 +5,11 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import ast
 import numpy as np
+<<<<<<< HEAD
 from sklearn.metrics import roc_curve, roc_auc_score,accuracy_score
+=======
+from sklearn.metrics import roc_auc_score, accuracy_score
+>>>>>>> 991d5c9 (e)
 import os
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -24,7 +28,11 @@ def set_seed(seed=42):
 set_seed()
 
 class TransformerEncoder(nn.Module):
+<<<<<<< HEAD
     def __init__(self, input_size, hidden_size, num_layers=2, num_heads=16, dropout=0.1):
+=======
+    def __init__(self, input_size, hidden_size, num_layers=2, num_heads=4, dropout=0.1):
+>>>>>>> 991d5c9 (e)
         super(TransformerEncoder, self).__init__()
         self.input_proj = nn.Linear(input_size, hidden_size)
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_size, nhead=num_heads, dim_feedforward=hidden_size*4, dropout=dropout)
@@ -69,8 +77,13 @@ class TripletDataset(Dataset):
 
 input_size = 112
 hidden_size = 256
+<<<<<<< HEAD
 lr = 0.0005
 batch_size = 256
+=======
+lr = 0.001
+batch_size = 128
+>>>>>>> 991d5c9 (e)
 num_epochs = 200
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -81,6 +94,7 @@ optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
 current_dir = os.getcwd()
+<<<<<<< HEAD
 #train_dataset = TripletDataset(os.path.join(current_dir, "BnG_2_70.csv"))
 #val_dataset = TripletDataset(os.path.join(current_dir, "BnG_2_30.csv"))
 
@@ -88,6 +102,10 @@ current_dir = os.getcwd()
 train_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_70_|3|_VTL5_C2.csv"))
 val_dataset = TripletDataset(os.path.join(current_dir, "Final-Triplets_G_30_|3|_VTL5_C2.csv"))
 
+=======
+train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+>>>>>>> 991d5c9 (e)
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -146,6 +164,7 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.3):
             all_positive_distances.extend(dist_pos.cpu().numpy())
             all_negative_distances.extend(dist_neg.cpu().numpy())
             
+<<<<<<< HEAD
             all_distances = np.concatenate([all_positive_distances, all_negative_distances])
             all_labels = np.concatenate([np.ones(len(all_positive_distances)), np.zeros(len(all_negative_distances))])
 
@@ -158,6 +177,8 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.3):
             threshold = -threshold
 
 
+=======
+>>>>>>> 991d5c9 (e)
             positive_correct += torch.sum(dist_pos < threshold).item()
             negative_correct += torch.sum(dist_neg >= threshold).item()
             
@@ -216,7 +237,11 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far based on accuracy
     if accuracy > best_accuracy:
         best_accuracy = accuracy
+<<<<<<< HEAD
         best_model_path = f"{current_dir}/BnG_11_best_transformer_siamese_model.pth"
+=======
+        best_model_path = f"{current_dir}/BnG_2_best_transformer_siamese_model.pth"
+>>>>>>> 991d5c9 (e)
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': siamese_net.state_dict(),
@@ -234,7 +259,11 @@ for epoch in range(num_epochs):
         print(f"New best model found and saved at epoch {epoch+1} with Accuracy: {accuracy:.4f}")
     
     if (epoch + 1) % 10 == 0:
+<<<<<<< HEAD
         model_save_path = f"{current_dir}/Largetransformer_siamese_model_epoch_{epoch+1}.pth"
+=======
+        model_save_path = f"{current_dir}/transformer_siamese_model_epoch_{epoch+1}.pth"
+>>>>>>> 991d5c9 (e)
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': siamese_net.state_dict(),
