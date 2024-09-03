@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 import optuna
+from sklearn.metrics import roc_auc_score
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
