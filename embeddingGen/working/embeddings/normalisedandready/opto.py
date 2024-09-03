@@ -33,12 +33,12 @@ class TransformerEncoder(nn.Module):
         self.norm = nn.LayerNorm(hidden_size // 2)
 
     def forward(self, x):
-        x = self.input_proj(x).unsqueeze(0)  # add sequence dimension
+        x = self.input_proj(x).unsqueeze(0)  # Add sequence dimension
         x = self.transformer_encoder(x)
-        x = x.squeeze(0)  # remove sequence dimension
+        x = x.squeeze(0)  # Remove sequence dimension
         x = self.output_proj(x)
         x = self.norm(x)
-        return F.normalize(x, p=2, dim=1)  # L2 
+        return F.normalize(x, p=2, dim=1)  # L2 normalization
 
 class SiameseTransformerNetwork(nn.Module):
     def __init__(self, input_size, hidden_size):
@@ -138,13 +138,13 @@ def evaluate(siamese_model, dataloader, criterion, device):
     return avg_loss, mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold
 
 def objective(trial):
-    # hyperparameters to be tuned
-    input_size = 112  
-    hidden_size = 256
+    # Hyperparameters to be tuned
+    input_size = 112  # Fixed
+    hidden_size = 256  # Fixed
     lr = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
     margin = trial.suggest_float('margin', 0.1, 2.0)
-
-     #fixed params
+    
+    # Fixed hyperparameters
     batch_size = 128
     num_epochs = 50
 
@@ -163,24 +163,13 @@ def objective(trial):
     best_mcc = float('-inf')
 
     for epoch in range(num_epochs):
-        train_loss = train_epoch(siamese_net, train_dataloader, criterion, optimizer, device)
-        scheduler.step()
-        
-        val_loss, mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold = evaluate(siamese_net, val_dataloader, criterion, device)
-        
-        if mcc > best_mcc:
-            best_mcc = mcc
-
-        trial.report(mcc, epoch)
-
-        if trial.should_prune():
-            raise optuna.TrialPruned()
+       pass
 
     return best_mcc
 
 if __name__ == "__main__":
     study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
-    study.optimize(objective, n_trials=100, timeout=3600*12)  # 12 hour timeout
+    study.optimize(objective, n_trials=100, timeout=3600*12)  # 12 hours timeout
 
     print("Best trial:")
     trial = study.best_trial
@@ -190,6 +179,7 @@ if __name__ == "__main__":
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
 
+    # Train the final model with the best hyperparameters
     input_size = 112
     hidden_size = 256
     lr = trial.params['lr']
@@ -221,15 +211,7 @@ if __name__ == "__main__":
         
         val_loss, mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold = evaluate(best_siamese_net, val_dataloader, best_criterion, device)
         
-        print(f'Epoch {epoch+1}:')
-        print(f'Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
-        print(f'Mean Positive Distance: {mean_pos_dist:.4f}')
-        print(f'Mean Negative Distance: {mean_neg_dist:.4f}')
-        print(f'Distance Difference: {mean_neg_dist - mean_pos_dist:.4f}')
-        print(f'MCC: {mcc:.4f}')
-        print(f'AUC: {auc_score:.4f}')
-        print(f'Best Threshold: {best_threshold:.4f}')
-        
+     pass #need to implement this
         if mcc > best_mcc:
             best_mcc = mcc
             best_model_path = f"{current_dir}/BnG_2_best_transformer_siamese_model_mcc.pth"
@@ -244,7 +226,9 @@ if __name__ == "__main__":
                 'auc': auc_score,
                 'best_threshold': best_threshold
             }, best_model_path)
-            print(f"New best model found and saved at epoch {epoch+1} with MCC: {mcc:.4f}")        
+            print(f"New best model found and saved at epoch {epoch+1} with MCC: {mcc:.4f}")
+        
+        # Regular saving every 10 epochs
         if (epoch + 1) % 10 == 0:
             model_save_path = f"{current_dir}/transformer_siamese_model_epoch_{epoch+1}.pth"
             torch.save({
