@@ -91,17 +91,13 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
     return running_loss / len(dataloader)
 
-def find_best_threshold(all_distances, all_labels):
-    fpr, tpr, thresholds = roc_curve(all_labels, -all_distances)
-    optimal_idx = np.argmax(tpr - fpr)
-    optimal_threshold = thresholds[optimal_idx]
-    return optimal_threshold
 
 def evaluate(siamese_model, dataloader, criterion, device):
     siamese_model.eval()
     running_loss = 0.0
     all_positive_distances = []
     all_negative_distances = []
+    all_labels = []
     
     pbar = tqdm(dataloader, desc="Evaluating")
     with torch.no_grad():
@@ -120,23 +116,37 @@ def evaluate(siamese_model, dataloader, criterion, device):
             all_positive_distances.extend(dist_pos.cpu().numpy())
             all_negative_distances.extend(dist_neg.cpu().numpy())
             
+            # Add labels: 1 for positive pairs, 0 for negative pairs
+            all_labels.extend([1] * len(dist_pos) + [0] * len(dist_neg))
+            
             pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
     
     avg_loss = running_loss / len(dataloader)
     all_distances = np.concatenate([all_positive_distances, all_negative_distances])
-    all_labels = np.concatenate([np.ones(len(all_positive_distances)), np.zeros(len(all_negative_distances))])
+    all_labels = np.array(all_labels)
     
+    # Find the best threshold
     best_threshold = find_best_threshold(all_distances, all_labels)
+    
+    # Make predictions using the best threshold
     predictions = (all_distances < best_threshold).astype(int)
+    
+    # Calculate MCC
     mcc = matthews_corrcoef(all_labels, predictions)
     
-    auc_score = auc(all_labels, -all_distances)
+    # Calculate AUC
+    auc_score = roc_auc_score(all_labels, -all_distances)
     
     mean_pos_dist = np.mean(all_positive_distances)
     mean_neg_dist = np.mean(all_negative_distances)
     
     return avg_loss, mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold
 
+def find_best_threshold(distances, labels):
+    fpr, tpr, thresholds = roc_curve(labels, -distances)
+    optimal_idx = np.argmax(tpr - fpr)
+    return thresholds[optimal_idx]
+    
 def objective(trial):
     input_size = 112  # Fixed
     hidden_size = 256  # Fixed
