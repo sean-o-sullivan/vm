@@ -1,1 +1,5 @@
 *.pth
+<<<<<<< HEAD
+=======
+*.pth
+>>>>>>> d6c120f (Add older .pth files to gitignore)
