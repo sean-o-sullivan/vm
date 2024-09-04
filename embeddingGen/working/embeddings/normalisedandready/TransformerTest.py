@@ -47,18 +47,36 @@ class EvaluationDataset(Dataset):
     def __init__(self, csv_file, column):
         self.data = pd.read_csv(csv_file)
         self.column = column
+        self.valid_indices = self._get_valid_indices()
+        print(f"Processing column: {column}")
+        print(f"Total samples: {len(self.data)}, Valid samples: {len(self.valid_indices)}")
+        print(f"Skipped {len(self.data) - len(self.valid_indices)} samples due to invalid comparison embeddings.")
+
+    def _get_valid_indices(self):
+        return [i for i, row in self.data.iterrows()
+                if self._is_valid_embedding(row[self.column])]
+
+    def _is_valid_embedding(self, embedding_str):
+        try:
+            embedding = ast.literal_eval(embedding_str)
+            return embedding != [1] and len(embedding) == 112
+        except (ValueError, SyntaxError):
+            return False
 
     def __len__(self):
-        return len(self.data)
+        return len(self.valid_indices)
 
     def __getitem__(self, idx):
-        row = self.data.iloc[idx]
-        anchor_embedding = ast.literal_eval(row['anchor_embedding'])
-        comparison_embedding = ast.literal_eval(row[self.column])
-        
+        row = self.data.iloc[self.valid_indices[idx]]
+        anchor_embedding = self._parse_embedding(row['anchor_embedding'])
+        comparison_embedding = self._parse_embedding(row[self.column])
         return (torch.tensor(anchor_embedding, dtype=torch.float32),
                 torch.tensor(comparison_embedding, dtype=torch.float32))
 
+    def _parse_embedding(self, embedding_str):
+        return ast.literal_eval(embedding_str)
+    
+    
 def evaluate_model(model, dataloader, device, threshold=0.99):
     model.eval()
     all_distances = []
@@ -81,8 +99,6 @@ def evaluate_model(model, dataloader, device, threshold=0.99):
 input_size = 112
 hidden_size = 256
 batch_size = 1 #128, we are doing evaluation, even though it should technically be fine for both, and it is.
-
-# Load the model
 current_dir = os.getcwd()
 model_path = os.path.join(current_dir, "BnG_9_best_transformer_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device, weights_only=False)
@@ -113,18 +129,14 @@ with open(results_file, 'w', newline='') as csvfile:
 
     for column in embedding_columns:
         print(f"\nEvaluating {column}:")
-        
-        # Load the evaluation dataset for this column
         eval_dataset = EvaluationDataset('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/GPT/output_S.csv', column)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
-        
-        # Evaluate the model
         distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])#checkpoint['threshold']
         
         # Calculate metrics
         total_samples = len(predictions)
-        true_negatives = sum(predictions)  # Correct dissimilar predictions
-        false_positives = total_samples - true_negatives  # Incorrect similar predictions
+        true_negatives = sum(predictions)
+        false_positives = total_samples - true_negatives  
         
         accuracy = accuracy_score([1] * total_samples, predictions)
         precision = precision_score([1] * total_samples, predictions, zero_division=1)
@@ -138,15 +150,12 @@ with open(results_file, 'w', newline='') as csvfile:
         std_dist = np.std(distances)
         min_dist = np.min(distances)
         max_dist = np.max(distances)
-        
-        # # Write results to CSV
+    
         # csvwriter.writerow([column, accuracy, precision, recall, f1,
         #                     mean_dist, std_dist, min_dist, max_dist,
         #                     checkpoint['threshold'], total_samples,
         #                     true_negatives, false_positives,
         #                     true_positive_rate, false_positive_rate])
-        
-        # Print results
         print(f"Accuracy: {accuracy:.4f}")
         print(f"Precision: {precision:.4f}")
         print(f"Recall: {recall:.4f}")

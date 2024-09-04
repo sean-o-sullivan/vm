@@ -8,7 +8,9 @@ import time
 print("Script started. Importing necessary libraries...")
 
 print("Reading File A...")
-df_a = pd.read_csv('/home/aiadmin/Desktop/code/vm/embeddingGen/working/clean/AGG_csv_a_with_embeddings.csv')
+#df_a = pd.read_csv('/home/aiadmin/Desktop/code/vm/embeddingGen/working/clean/AGG_csv_a_with_embeddings.csv')
+df_a = pd.read_csv('/home/aiadmin/Desktop/code/vm/embeddingGen/working/clean/Copy of GPT Data Backup - FINALAGG_csv_a_with_embeddings (1).csv')
+
 print(f"File A loaded. Shape: {df_a.shape}")
 print("Reading File B...")
 df_b = pd.read_csv('/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/Final-Triplets_G_30_|2|_VTL5_C3.csv')
@@ -26,6 +28,7 @@ start_time = time.time()
 for index, row in tqdm(df_a.iterrows(), total=df_a.shape[0], desc="Processing rows"):
 
     embedding_g = row['embeddings']
+    print(f"This is em{embedding_g}, at index: {index}")
     embedding_g = ast.literal_eval(embedding_g.strip())
     matches = df_b[df_b['positive_embedding'].apply(lambda x: ast.literal_eval(x) == embedding_g)]
     
