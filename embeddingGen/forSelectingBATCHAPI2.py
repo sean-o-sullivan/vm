@@ -57,8 +57,10 @@ def process_samples(input_csv, output_file):
     logging.info(f"Batch dataset created: {output_file}")
 
 if __name__ == "__main__":
-    input_csv = 'selected_samples.csv'
-    output_file = 'batch_dataset_classification_5K.jsonl'
+    input_csv = '/home/aiadmin/Desktop/code/vm/embeddingGen/selected_samples_FromGPTRound2.csv'
+#    input_csv = 'selected_samples.csv'
+    output_file = 'batch_dataset_classification_topicz.jsonl'
+#    output_file = 'batch_dataset_classification_5K.jsonl'
     
     logging.info("Starting the batch request generation process...")
     process_samples(input_csv, output_file)

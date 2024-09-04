@@ -107,7 +107,7 @@ def evaluate2(siamese_model, dataloader, criterion, device, threshold):
     precision = positive_correct / (positive_correct + false_positive) if (positive_correct + false_positive) > 0 else 0
     recall = positive_correct / (positive_correct + false_negative) if (positive_correct + false_negative) > 0 else 0
 
-    f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    f1= 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
 
     # Compute MCC (Matthews Correlation Coefficient)
     numerator = (positive_correct * negative_correct) - (false_positive * false_negative)
@@ -234,7 +234,10 @@ batch_size = 128
 
 # model
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "BnG_10_best_transformer_siamese_model.pth")
+#model_path = os.path.join(current_dir, "BnG_10_best_transformer_siamese_model.pth")
+model_path = "/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalisedandready/final_transformer_siamese_model_with_hard_negatives.pth"
+
+
 checkpoint = torch.load(model_path, map_location=device)
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -246,7 +249,7 @@ threshold = checkpoint['threshold']
 #val_set = "BnG_2_30.csv"
 
 
-val_set = "Final-Triplets_B_30_|3|_VTL5_C4.csv"
+val_set = "Final-Triplets_G_30_|3|_VTL5_C4.csv"
 #val_set = "Final-Triplets_G_30_|3|_VTL5_C4.csv"
 
 # val_set = 'Final-Triplets_ters_|3|_VTL51_C50.csv'

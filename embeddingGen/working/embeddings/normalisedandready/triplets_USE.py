@@ -6,7 +6,7 @@ from random import choice
 import os
 import ast
 
-combination_value = 1
+combination_value = 1 #the virtual text limit
 virtual_text_limit = 5
 
 def generate_all_combinations(df):
@@ -49,7 +49,7 @@ def generate_combinations_for_author(author_texts, author_id):
 
     return combinations_list, context_embeddings_list
 
-datasetpath = "GG_30.csv"
+datasetpath = "BB_70.csv"
 #datasetpath = "/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_output_2embeddings_Reuters.csv"
 df = pd.read_csv(datasetpath)
 
