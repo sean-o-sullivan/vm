@@ -4,8 +4,10 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import ast
+
 import numpy as np
-from sklearn.metrics import roc_curve, roc_auc_score, matthews_corrcoef
+from sklearn.metrics import accuracy_score, roc_curve, roc_auc_score, matthews_corrcoef
+
 import os
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -103,10 +105,12 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device, epoch, 
     
     return running_loss / len(dataloader)
 
+
+
 def find_best_threshold(distances, labels):
     fpr, tpr, thresholds = roc_curve(labels, -distances)
     optimal_idx = np.argmax(tpr - fpr)
-    return thresholds[optimal_idx]
+    return abs(thresholds[optimal_idx])  # Use abs() here
 
 def evaluate(siamese_model, dataloader, criterion, device):
     siamese_model.eval()
@@ -133,13 +137,16 @@ def evaluate(siamese_model, dataloader, criterion, device):
     best_threshold = find_best_threshold(all_distances, all_labels)
     predictions = (all_distances < best_threshold).astype(int)
     mcc = matthews_corrcoef(all_labels, predictions)
-    
-    auc_score = auc(all_labels, -all_distances)
+    auc_score = roc_auc_score(all_labels, -all_distances)
+    accuracy = accuracy_score(all_labels, predictions)
     
     mean_pos_dist = np.mean(all_positive_distances)
     mean_neg_dist = np.mean(all_negative_distances)
     
-    return mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold
+    return mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold, accuracy
+
+
+
 
 def objective(trial):
     input_size = 112 
@@ -151,7 +158,7 @@ def objective(trial):
     num_heads = trial.suggest_categorical('num_heads', [4, 8, 16])
     
     batch_size = 128
-    num_epochs = 30  # Reduced for faster trials
+    num_epochs = 30  # reduced for faster trials
 
     siamese_net = SiameseTransformerNetwork(input_size, hidden_size, num_layers, num_heads, dropout).to(device)
     criterion = nn.MarginRankingLoss(margin=margin)
@@ -170,15 +177,17 @@ def objective(trial):
     for epoch in range(num_epochs):
         train_loss = train_epoch(siamese_net, train_dataloader, criterion, optimizer, device, epoch, trial)
         scheduler.step()
+        mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold, accuracy = evaluate(best_siamese_net, val_dataloader, best_criterion, device)
         
-        mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold = evaluate(siamese_net, val_dataloader, criterion, device)
-        
-        logging.info(f"Trial {trial.number}, Epoch {epoch+1}/{num_epochs}")
-        logging.info(f"  Train Loss: {train_loss:.4f}")
-        logging.info(f"  MCC: {mcc:.4f}, AUC: {auc_score:.4f}")
-        logging.info(f"  Mean Pos Dist: {mean_pos_dist:.4f}, Mean Neg Dist: {mean_neg_dist:.4f}")
-        logging.info(f"  Best Threshold: {best_threshold:.4f}")
-        
+        logging.info(f'Epoch {epoch+1}/{num_epochs}:')
+        logging.info(f'Train Loss: {train_loss:.4f}')
+        logging.info(f'Mean Positive Distance: {mean_pos_dist:.4f}')
+        logging.info(f'Mean Negative Distance: {mean_neg_dist:.4f}')
+        logging.info(f'MCC: {mcc:.4f}')
+        logging.info(f'AUC: {auc_score:.4f}')
+        logging.info(f'Best Threshold: {best_threshold:.4f}')
+        logging.info(f'Accuracy: {accuracy:.4f}')
+
         if mcc > best_mcc:
             best_mcc = mcc
 
@@ -250,6 +259,7 @@ if __name__ == "__main__":
         if mcc > best_mcc:
             best_mcc = mcc
             best_model_path = f"{current_dir}/BnG_2_best_transformer_siamese_model_mcc.pth"
+        
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': best_siamese_net.state_dict(),
@@ -258,10 +268,10 @@ if __name__ == "__main__":
                 'train_loss': train_loss,
                 'mcc': mcc,
                 'auc': auc_score,
-                'best_threshold': best_threshold
+                'best_threshold': best_threshold,
+                'accuracy': accuracy
             }, best_model_path)
-            logging.info(f"New best model found and saved at epoch {epoch+1} with MCC: {mcc:.4f}")
-        
+
         if (epoch + 1) % 10 == 0:
             model_save_path = f"{current_dir}/transformer_siamese_model_epoch_{epoch+1}.pth"
             torch.save({
