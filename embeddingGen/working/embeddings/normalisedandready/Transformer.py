@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import ast
 import numpy as np
-from sklearn.metrics import roc_auc_score, accuracy_score
+from sklearn.metrics import roc_curve, roc_auc_score,accuracy_score
 import os
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -24,7 +24,7 @@ def set_seed(seed=42):
 set_seed()
 
 class TransformerEncoder(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers=2, num_heads=4, dropout=0.1):
+    def __init__(self, input_size, hidden_size, num_layers=2, num_heads=16, dropout=0.1):
         super(TransformerEncoder, self).__init__()
         self.input_proj = nn.Linear(input_size, hidden_size)
         encoder_layer = nn.TransformerEncoderLayer(d_model=hidden_size, nhead=num_heads, dim_feedforward=hidden_size*4, dropout=dropout)
@@ -69,8 +69,8 @@ class TripletDataset(Dataset):
 
 input_size = 112
 hidden_size = 256
-lr = 0.001
-batch_size = 128
+lr = 0.0005
+batch_size = 256
 num_epochs = 200
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -141,6 +141,18 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold=0.3):
             all_positive_distances.extend(dist_pos.cpu().numpy())
             all_negative_distances.extend(dist_neg.cpu().numpy())
             
+            all_distances = np.concatenate([all_positive_distances, all_negative_distances])
+            all_labels = np.concatenate([np.ones(len(all_positive_distances)), np.zeros(len(all_negative_distances))])
+
+
+            fpr, tpr, thresholds = roc_curve(all_labels, -all_distances)  # Negative distances because smaller distance = more similar
+
+            # Find the optimal threshold
+            optimal_idx = np.argmax(tpr - fpr)
+            threshold = thresholds[optimal_idx]
+            threshold = -threshold
+
+
             positive_correct += torch.sum(dist_pos < threshold).item()
             negative_correct += torch.sum(dist_neg >= threshold).item()
             
@@ -199,7 +211,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far based on accuracy
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-        best_model_path = f"{current_dir}/BnG_2_best_transformer_siamese_model.pth"
+        best_model_path = f"{current_dir}/BnG_9_best_transformer_siamese_model.pth"
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': siamese_net.state_dict(),

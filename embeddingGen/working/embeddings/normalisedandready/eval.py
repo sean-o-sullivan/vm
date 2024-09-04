@@ -151,7 +151,7 @@ fpr, tpr, thresholds = roc_curve(all_labels, -all_distances)  # Negative distanc
 roc_auc = auc(fpr, tpr)
 
 optimal_idx = np.argmax(tpr - fpr)
-optimal_threshold = thresholds[optimal_idx]
+optimal_threshold = 0.2373#thresholds[optimal_idx]
 
 print(f"Optimal threshold: {optimal_threshold:.4f}")
 
