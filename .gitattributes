@@ -1,2 +1,4 @@
+embeddingGen/working/embeddings/normalisedandready/Final-Triplets_|3|_VTL10_C*.csv filter=lfs diff=lfs merge=lfs -text
+*.csv filter=lfs diff=lfs merge=lfs -text
 *.jsonl filter=lfs diff=lfs merge=lfs -text
 *Final-Triplets_ters_*VTL10*.csv filter=lfs diff=lfs merge=lfs -text
