@@ -119,7 +119,7 @@ batch_size = 128
 
 # model
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "BnG_9_best_transformer_siamese_model.pth")
+model_path = os.path.join(current_dir, "BnG_10_best_transformer_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device)
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -127,7 +127,14 @@ siamese_net.load_state_dict(checkpoint['model_state_dict'])
 siamese_net.eval()
 
 threshold = checkpoint['threshold']
-val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+
+val_set = "BnG_2_30.csv"
+
+#val_set = "Final-Triplets_B_30_|3|_VTL5_C3.csv"
+#val_set = "Final-Triplets_G_30_|3|_VTL5_C4.csv"
+
+# Load the BnG_30 dataset
+val_dataset = TripletDataset(os.path.join(current_dir, val_set))
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
 
 # Use MarginRankingLoss (same as in training)

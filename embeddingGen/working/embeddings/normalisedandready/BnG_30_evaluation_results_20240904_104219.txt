@@ -1,0 +1,11 @@
+Evaluation Results:
+Loss: 0.0078
+Mean Positive Distance: 0.5691 ± 0.1425
+Mean Negative Distance: 0.9288 ± 0.1580
+Distance Difference: 0.3597
+Overlap Percentage: 65.81%
+AUC: 0.5050
+Accuracy: 0.4464
+F1 Score: 0.5981
+Matthews Correlation Coefficient: -0.1635
+Threshold: 0.6951
