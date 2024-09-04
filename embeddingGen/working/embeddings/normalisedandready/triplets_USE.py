@@ -6,8 +6,8 @@ from random import choice
 import os
 import ast
 
-combination_value = 50
-virtual_text_limit = 51
+combination_value = 4
+virtual_text_limit = 5
 
 def generate_all_combinations(df):
     all_combinations = []
@@ -16,7 +16,7 @@ def generate_all_combinations(df):
     for author_id, group in tqdm(df.groupby('author'), desc='Processing authors', dynamic_ncols=True):
         print(f"Processing author ID: {author_id}, Number of texts: {len(group)}")
 
-        author_texts = group.drop(columns=['bookSample', 'author'])
+        author_texts = group.drop(columns=['embedding_id', 'author'])
 
         if len(author_texts) > virtual_text_limit:
             author_texts = author_texts.sample(n=virtual_text_limit)
@@ -49,8 +49,8 @@ def generate_combinations_for_author(author_texts, author_id):
 
     return combinations_list, context_embeddings_list
 
-#datasetpath = "GG_30.csv"
-datasetpath = "/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_output_2embeddings_Reuters.csv"
+datasetpath = "BB_30.csv"
+#datasetpath = "/home/aiadmin/Desktop/code/vm/embeddingGen/working/embeddings/normalized_adversarial_csvs/normalized_output_2embeddings_Reuters.csv"
 df = pd.read_csv(datasetpath)
 
 of = os.path.splitext(datasetpath)[0]
@@ -74,7 +74,7 @@ for _, row in tqdm(combined_df.iterrows(), total=len(combined_df), desc='Generat
         continue
     
     negative_author = choice(other_authors)
-    negative_texts = df[df['author'] == negative_author].drop(columns=['bookSample', 'author'])
+    negative_texts = df[df['author'] == negative_author].drop(columns=['embedding_id', 'author'])
     negative_embed = negative_texts.sample(1).values.flatten().tolist()
     false_pairs.append(negative_embed)
 

@@ -246,10 +246,12 @@ threshold = checkpoint['threshold']
 #val_set = "BnG_2_30.csv"
 
 
-#val_set = "Final-Triplets_B_30_|3|_VTL5_C3.csv"
+val_set = "Final-Triplets_B_30_|3|_VTL5_C4.csv"
 #val_set = "Final-Triplets_G_30_|3|_VTL5_C4.csv"
 
-val_set = 'Final-Triplets_ters_|3|_VTL51_C50.csv'
+# val_set = 'Final-Triplets_ters_|3|_VTL51_C50.csv'
+
+#val_set = 'Final-Triplets_ters_|3|_VTL6_C5.csv'
 # Load the BnG_30 dataset
 val_dataset = TripletDataset(os.path.join(current_dir, val_set))
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
