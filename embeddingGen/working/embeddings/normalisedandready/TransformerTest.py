@@ -76,7 +76,7 @@ class EvaluationDataset(Dataset):
     def _parse_embedding(self, embedding_str):
         return ast.literal_eval(embedding_str)
     
-    
+
 def evaluate_model(model, dataloader, device, threshold=0.99):
     model.eval()
     all_distances = []
@@ -100,7 +100,7 @@ input_size = 112
 hidden_size = 256
 batch_size = 1 #128, we are doing evaluation, even though it should technically be fine for both, and it is.
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "BnG_9_best_transformer_siamese_model.pth")
+model_path = os.path.join(current_dir, "BnG_10_best_transformer_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device, weights_only=False)
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -142,7 +142,8 @@ with open(results_file, 'w', newline='') as csvfile:
         precision = precision_score([1] * total_samples, predictions, zero_division=1)
         recall = recall_score([1] * total_samples, predictions, zero_division=1)
         f1 = f1_score([1] * total_samples, predictions, zero_division=1)
-        
+
+
         true_positive_rate = 0  # We don't expect any true positives
         false_positive_rate = false_positives / total_samples
         
