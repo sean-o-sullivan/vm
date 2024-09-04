@@ -45,15 +45,15 @@ def create_feature_mapping():
         'sentence_type_ratio_compound-complex', 'figurative_vs_literal_ratio', 'flesch_reading_ease',
         'GFI', 'coleman_liau_index', 'ari', 'dale_chall_readability_score', 'lix', 'smog_index', 'rix'
     ]
-    return {name: i for i, name in enumerate(feature_names)}
+    return {name: name for name in feature_names}  # Map each name to itself
 
 def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir):
 
     stats_data = pd.read_csv(stats_data_path, index_col=0)
-   
     df = pd.read_csv(csv_path)
    
     feature_mapping = create_feature_mapping()
+
     def normalize_row(row):
         normalized_row = row.copy()
         for feature_name, i in feature_mapping.items():
@@ -77,12 +77,32 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
        
         return normalized_row
 
-    df_normalized = df.apply(normalize_row, axis=1)
+    first_two_columns = df.columns[:2].tolist()
+
+    columns_to_normalize = [col for col in df.columns[2:] if col in feature_mapping.values() and col not in features_to_omit]
+
+    for feature_name in columns_to_normalize:
+        if feature_name in stats_data.index:
+            mean = stats_data.at[feature_name, 'mean']
+            std = stats_data.at[feature_name, 'std']
+            percentile_99_5 = stats_data.at[feature_name, 'percentile_99.5']
+            percentile_0_5 = stats_data.at[feature_name, 'percentile_0.5']
+           
+            if std != 0:
+                z_scores = (df[feature_name] - mean) / std
+                z_score_0_5 = (percentile_0_5 - mean) / std
+                z_score_99_5 = (percentile_99_5 - mean) / std
+                normalized_values = (z_scores - z_score_0_5) / (z_score_99_5 - z_score_0_5)
+                df[feature_name] = np.clip(normalized_values, 0, 1)
+            else:
+                df[feature_name] = 0.5
     df_normalized = df_normalized.drop(columns=features_to_omit, errors='ignore')
 
     os.makedirs(output_dir, exist_ok=True)
+
+    output_columns = first_two_columns + columns_to_normalize
     output_file_path = os.path.join(output_dir, f"normalized_{os.path.basename(csv_path)}")
-    df_normalized.to_csv(output_file_path, index=False)
+    df[output_columns].to_csv(output_file_path, index=False)
    
     print(f"Normalized CSV saved to: {output_file_path}")
 
