@@ -1,0 +1,7 @@
+Evaluation Results:
+AUC: 0.9448
+Optimal Threshold: -0.2373
+Accuracy: 0.5000
+Mean Positive Distance: 0.1645 ± 0.0666
+Mean Negative Distance: 0.3578 ± 0.1082
+Distance Difference: 0.1932

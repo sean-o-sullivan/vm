@@ -69,7 +69,7 @@ class TripletDataset(Dataset):
 
 input_size = 112
 hidden_size = 256
-lr = 0.00025
+lr = 0.0005
 batch_size = 256
 num_epochs = 200
 
@@ -81,8 +81,8 @@ optimizer = optim.Adam(siamese_net.parameters(), lr=lr, weight_decay=1e-4)
 scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
 current_dir = os.getcwd()
-train_dataset = TripletDataset(os.path.join(current_dir, "BnG_70.csv"))
-val_dataset = TripletDataset(os.path.join(current_dir, "BnG_30.csv"))
+train_dataset = TripletDataset(os.path.join(current_dir, "BnG_2_70.csv"))
+val_dataset = TripletDataset(os.path.join(current_dir, "BnG_2_30.csv"))
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)
@@ -211,7 +211,7 @@ for epoch in range(num_epochs):
     # Check if this is the best model so far based on accuracy
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-        best_model_path = f"{current_dir}/BnG_9_best_transformer_siamese_model.pth"
+        best_model_path = f"{current_dir}/BnG_10_best_transformer_siamese_model.pth"
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': siamese_net.state_dict(),

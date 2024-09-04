@@ -1,0 +1,9 @@
+Evaluation Results:
+Loss: 0.0035
+Mean Positive Distance: 0.4293 ± 0.1151
+Mean Negative Distance: 0.7703 ± 0.1343
+Distance Difference: 0.3409
+Overlap Percentage: 41.04%
+AUC: 0.9715
+Overall Accuracy: 0.9142 (Threshold: 0.6014)
+Positive Accuracy: 0.9255, Negative Accuracy: 0.9029
