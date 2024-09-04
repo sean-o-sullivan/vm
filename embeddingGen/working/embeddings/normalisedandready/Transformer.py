@@ -69,7 +69,7 @@ class TripletDataset(Dataset):
 
 input_size = 112
 hidden_size = 256
-lr = 0.0005
+lr = 0.00025
 batch_size = 256
 num_epochs = 200
 

@@ -123,7 +123,7 @@ batch_size = 128
 
 # model
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "BnG_2_best_transformer_siamese_model.pth")
+model_path = os.path.join(current_dir, "BnG_9_best_transformer_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device)
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)

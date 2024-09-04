@@ -84,7 +84,7 @@ batch_size = 1 #128, we are doing evaluation, even though it should technically 
 
 # Load the model
 current_dir = os.getcwd()
-model_path = os.path.join(current_dir, "BnG_2_best_transformer_siamese_model.pth")
+model_path = os.path.join(current_dir, "BnG_9_best_transformer_siamese_model.pth")
 checkpoint = torch.load(model_path, map_location=device, weights_only=False)
 
 siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
@@ -119,7 +119,7 @@ with open(results_file, 'w', newline='') as csvfile:
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch_size, num_workers=4)
         
         # Evaluate the model
-        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=0.2)#checkpoint['threshold']
+        distances, predictions = evaluate_model(siamese_net, eval_dataloader, device, threshold=checkpoint['threshold'])#checkpoint['threshold']
         
         # Calculate metrics
         total_samples = len(predictions)
