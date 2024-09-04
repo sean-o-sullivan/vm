@@ -11,9 +11,14 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 import optuna
-from sklearn.metrics import roc_auc_score
+import logging
+from datetime import datetime
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logging.info(f"Using device: {device}")
 
 def set_seed(seed=42):
     torch.manual_seed(seed)
@@ -68,11 +73,11 @@ class TripletDataset(Dataset):
                 torch.tensor(positive_embedding, dtype=torch.float32),
                 torch.tensor(negative_embedding, dtype=torch.float32))
 
-def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
+def train_epoch(siamese_model, dataloader, criterion, optimizer, device, epoch, trial):
     siamese_model.train()
     running_loss = 0.0
-    pbar = tqdm(dataloader, desc="Training")
-    for anchor, positive, negative in pbar:
+    pbar = tqdm(dataloader, desc=f"Epoch {epoch+1} Training")
+    for batch_idx, (anchor, positive, negative) in enumerate(pbar):
         anchor, positive, negative = anchor.to(device), positive.to(device), negative.to(device)
         
         optimizer.zero_grad()
@@ -89,14 +94,20 @@ def train_epoch(siamese_model, dataloader, criterion, optimizer, device):
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
-        pbar.set_postfix({'loss': running_loss / (pbar.n + 1)})
+        
+        pbar.set_postfix({'loss': running_loss / (batch_idx + 1)})
+        
+        if batch_idx % 10 == 0:
+            trial.report(running_loss / (batch_idx + 1), epoch * len(dataloader) + batch_idx)
+            if trial.should_prune():
+                raise optuna.TrialPruned()
+    
     return running_loss / len(dataloader)
 
-def find_best_threshold(all_distances, all_labels):
-    fpr, tpr, thresholds = roc_curve(all_labels, -all_distances)
+def find_best_threshold(distances, labels):
+    fpr, tpr, thresholds = roc_curve(labels, -distances)
     optimal_idx = np.argmax(tpr - fpr)
-    optimal_threshold = thresholds[optimal_idx]
-    return optimal_threshold
+    return thresholds[optimal_idx]
 
 def evaluate(siamese_model, dataloader, criterion, device):
     siamese_model.eval()
@@ -147,7 +158,7 @@ def objective(trial):
     
     # Fixed hyperparameters
     batch_size = 128
-    num_epochs = 50
+    num_epochs = 30  # Reduced for faster trials
 
     siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
     criterion = nn.MarginRankingLoss(margin=margin)
@@ -164,21 +175,47 @@ def objective(trial):
     best_mcc = float('-inf')
 
     for epoch in range(num_epochs):
-       pass
+        train_loss = train_epoch(siamese_net, train_dataloader, criterion, optimizer, device, epoch, trial)
+        scheduler.step()
+        
+        val_loss, mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold = evaluate(siamese_net, val_dataloader, criterion, device)
+        
+        logging.info(f"Trial {trial.number}, Epoch {epoch+1}/{num_epochs}")
+        logging.info(f"  Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        logging.info(f"  MCC: {mcc:.4f}, AUC: {auc_score:.4f}")
+        logging.info(f"  Mean Pos Dist: {mean_pos_dist:.4f}, Mean Neg Dist: {mean_neg_dist:.4f}")
+        logging.info(f"  Best Threshold: {best_threshold:.4f}")
+        
+        if mcc > best_mcc:
+            best_mcc = mcc
+
+        trial.report(mcc, epoch)
+
+        if trial.should_prune():
+            raise optuna.TrialPruned()
 
     return best_mcc
 
 if __name__ == "__main__":
-    study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner())
-    study.optimize(objective, n_trials=100, timeout=3600*12)  # 12 hours timeout
+    study_name = f"siamese_transformer_study_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    storage_name = f"sqlite:///{study_name}.db"
+    
+    study = optuna.create_study(
+        study_name=study_name,
+        storage=storage_name,
+        direction='maximize',
+        pruner=optuna.pruners.MedianPruner(n_startup_trials=5, n_warmup_steps=5, interval_steps=1)
+    )
+    
+    study.optimize(objective, n_trials=50, timeout=3600*6)  # 6 hours timeout
 
-    print("Best trial:")
+    logging.info("Best trial:")
     trial = study.best_trial
 
-    print("  Value: ", trial.value)
-    print("  Params: ")
+    logging.info(f"  Value: {trial.value}")
+    logging.info("  Params: ")
     for key, value in trial.params.items():
-        print("    {}: {}".format(key, value))
+        logging.info(f"    {key}: {value}")
 
     # Train the final model with the best hyperparameters
     input_size = 112
@@ -186,7 +223,7 @@ if __name__ == "__main__":
     lr = trial.params['lr']
     margin = trial.params['margin']
     batch_size = 128
-    num_epochs = 200
+    num_epochs = 100  # Increased for final training
 
     best_siamese_net = SiameseTransformerNetwork(input_size, hidden_size).to(device)
     best_criterion = nn.MarginRankingLoss(margin=margin)
@@ -203,16 +240,21 @@ if __name__ == "__main__":
     best_mcc = float('-inf')
     best_model_path = None
 
-    print("Starting Training!")
+    logging.info("Starting Final Training!")
     for epoch in range(num_epochs):
-        print(f"Starting epoch {epoch+1}")
-        
-        train_loss = train_epoch(best_siamese_net, train_dataloader, best_criterion, best_optimizer, device)
+        train_loss = train_epoch(best_siamese_net, train_dataloader, best_criterion, best_optimizer, device, epoch, optuna.trial.FixedTrial(trial.params))
         best_scheduler.step()
         
         val_loss, mean_pos_dist, mean_neg_dist, mcc, auc_score, best_threshold = evaluate(best_siamese_net, val_dataloader, best_criterion, device)
         
-     pass #need to implement this
+        logging.info(f'Epoch {epoch+1}/{num_epochs}:')
+        logging.info(f'Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
+        logging.info(f'Mean Positive Distance: {mean_pos_dist:.4f}')
+        logging.info(f'Mean Negative Distance: {mean_neg_dist:.4f}')
+        logging.info(f'MCC: {mcc:.4f}')
+        logging.info(f'AUC: {auc_score:.4f}')
+        logging.info(f'Best Threshold: {best_threshold:.4f}')
+        
         if mcc > best_mcc:
             best_mcc = mcc
             best_model_path = f"{current_dir}/BnG_2_best_transformer_siamese_model_mcc.pth"
@@ -227,9 +269,8 @@ if __name__ == "__main__":
                 'auc': auc_score,
                 'best_threshold': best_threshold
             }, best_model_path)
-            print(f"New best model found and saved at epoch {epoch+1} with MCC: {mcc:.4f}")
+            logging.info(f"New best model found and saved at epoch {epoch+1} with MCC: {mcc:.4f}")
         
-        # Regular saving every 10 epochs
         if (epoch + 1) % 10 == 0:
             model_save_path = f"{current_dir}/transformer_siamese_model_epoch_{epoch+1}.pth"
             torch.save({
@@ -243,5 +284,5 @@ if __name__ == "__main__":
                 'best_threshold': best_threshold
             }, model_save_path)
 
-    print("Training completed!")
-    print(f"Best model saved at {best_model_path} with MCC: {best_mcc:.4f}")
+    logging.info("Training completed!")
+    logging.info(f"Best model is now saved at {best_model_path} with MCC: {best_mcc:.4f}")
