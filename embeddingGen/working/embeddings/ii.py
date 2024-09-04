@@ -109,19 +109,25 @@ features_to_omit = [
     "normalized_assonance"
 ]
 output_dir = 'normalized_adversarial_csvs'
+
+# List of all adversarial testing CSVs with embeddings
+# adversarial_csvs = [
+#     '../mimicry_samples_GPT3ABB_30_embeddings.csv',
+#     '../mimicry_samples_GPT3AGG_30_embeddings.csv',
+#     '../mimicry_samples_GPT4oABB_30_embeddings.csv',
+#     '../mimicry_samples_GPT4oAGG_30_embeddings.csv',
+#     '../mimicry_samples_GPT4TABB_30_embeddings.csv',
+#     '../mimicry_samples_GPT4TAGG_30_embeddings.csv',
+#     '../topic_based_samples_GPT3ABB_30_embeddings.csv',
+#     '../topic_based_samples_GPT3AGG_30_embeddings.csv',
+#     '../topic_based_samples_GPT4oABB_30_embeddings.csv',
+#     '../topic_based_samples_GPT4oAGG_30_embeddings.csv',
+#     '../topic_based_samples_GPT4TABB_30_embeddings.csv',
+#     '../topic_based_samples_GPT4TAGG_30_embeddings.csv'
+# ]
+
 adversarial_csvs = [
-    '../mimicry_samples_GPT3ABB_30_embeddings.csv',
-    '../mimicry_samples_GPT3AGG_30_embeddings.csv',
-    '../mimicry_samples_GPT4oABB_30_embeddings.csv',
-    '../mimicry_samples_GPT4oAGG_30_embeddings.csv',
-    '../mimicry_samples_GPT4TABB_30_embeddings.csv',
-    '../mimicry_samples_GPT4TAGG_30_embeddings.csv',
-    '../topic_based_samples_GPT3ABB_30_embeddings.csv',
-    '../topic_based_samples_GPT3AGG_30_embeddings.csv',
-    '../topic_based_samples_GPT4oABB_30_embeddings.csv',
-    '../topic_based_samples_GPT4oAGG_30_embeddings.csv',
-    '../topic_based_samples_GPT4TABB_30_embeddings.csv',
-    '../topic_based_samples_GPT4TAGG_30_embeddings.csv'
+    '/home/aiadmin/Downloads/output_2embeddings_Reuters.csv'
 ]
 for csv_file in adversarial_csvs:
     normalize_future_csv(csv_file, stats_data_path, features_to_omit, output_dir)

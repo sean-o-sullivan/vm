@@ -171,23 +171,22 @@ def evaluate(siamese_model, dataloader, criterion, device, threshold):
     avg_loss = running_loss / len(dataloader)
     total_samples = true_positive + true_negative + false_positive + false_negative
    
-    # Calculate accuracy metrics
     overall_accuracy = (true_positive + true_negative) / total_samples if total_samples > 0 else 0
     positive_accuracy = true_positive / (true_positive + false_negative) if (true_positive + false_negative) > 0 else 0
     negative_accuracy = true_negative / (true_negative + false_positive) if (true_negative + false_positive) > 0 else 0
    
-    # Compute precision, recall, and F1 score
+    # precision, recall, and F1 score
     precision = true_positive / (true_positive + false_positive) if (true_positive + false_positive) > 0 else 0
     recall = true_positive / (true_positive + false_negative) if (true_positive + false_negative) > 0 else 0
     f1_score = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
    
-    # Compute MCC (Matthews Correlation Coefficient)
+    # MCC 
     numerator = (true_positive * true_negative) - (false_positive * false_negative)
     denominator = np.sqrt((true_positive + false_positive) * (true_positive + false_negative) *
                           (true_negative + false_positive) * (true_negative + false_negative))
     mcc = numerator / denominator if denominator > 0 else 0
    
-    # Calculate distance statistics
+    # distance statistics
     mean_pos_dist = np.mean(all_positive_distances)
     mean_neg_dist = np.mean(all_negative_distances)
     std_pos_dist = np.std(all_positive_distances)
@@ -248,9 +247,9 @@ threshold = checkpoint['threshold']
 
 
 #val_set = "Final-Triplets_B_30_|3|_VTL5_C3.csv"
-val_set = "Final-Triplets_G_30_|3|_VTL5_C4.csv"
+#val_set = "Final-Triplets_G_30_|3|_VTL5_C4.csv"
 
-
+val_set = 'Final-Triplets_ters_|3|_VTL51_C50.csv'
 # Load the BnG_30 dataset
 val_dataset = TripletDataset(os.path.join(current_dir, val_set))
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, num_workers=4)

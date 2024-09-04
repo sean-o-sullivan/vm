@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import os
-import ast
 
 def create_feature_mapping():
     feature_names = [
@@ -51,19 +50,20 @@ def create_feature_mapping():
 def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir):
 
     stats_data = pd.read_csv(stats_data_path, index_col=0)
+   
     df = pd.read_csv(csv_path)
-    
+   
     feature_mapping = create_feature_mapping()
     def normalize_row(row):
         normalized_row = row.copy()
         for feature_name, i in feature_mapping.items():
-            if feature_name not in features_to_omit and feature_name in stats_data.index:
+            if feature_name not in features_to_omit and feature_name in stats_data.index and feature_name in row.index:
                 value = row[feature_name]
                 mean = stats_data.at[feature_name, 'mean']
                 std = stats_data.at[feature_name, 'std']
                 percentile_99_5 = stats_data.at[feature_name, 'percentile_99.5']
                 percentile_0_5 = stats_data.at[feature_name, 'percentile_0.5']
-                
+               
                 if std != 0:
                     z_score = (value - mean) / std
                     z_score_0_5 = (percentile_0_5 - mean) / std
@@ -72,17 +72,18 @@ def normalize_future_csv(csv_path, stats_data_path, features_to_omit, output_dir
                     normalized_value = np.clip(normalized_value, 0, 1)
                 else:
                     normalized_value = 0.5
-                
+               
                 normalized_row[feature_name] = normalized_value
-        
+       
         return normalized_row
 
-    # Normalize all feature columns
     df_normalized = df.apply(normalize_row, axis=1)
+    df_normalized = df_normalized.drop(columns=features_to_omit, errors='ignore')
+
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, f"normalized_{os.path.basename(csv_path)}")
     df_normalized.to_csv(output_file_path, index=False)
-    
+   
     print(f"Normalized CSV saved to: {output_file_path}")
 
 stats_data_path = 'embedding_stats.csv'
