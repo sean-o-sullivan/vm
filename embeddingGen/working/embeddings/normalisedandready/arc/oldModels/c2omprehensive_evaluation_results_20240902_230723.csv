@@ -1,7 +1,3 @@
-Embedding Type,Accuracy,AUC,Precision,Recall,F1 Score,Mean Distance,Std Distance,Min Distance,Max Distance,Threshold,Unique Predictions,Total Samples,Positive Predictions,Negative Predictions,True Positives,False Positives,True Negatives,False Negatives
-mimic_GPT3AGG_embedding,0.9001122334455668,N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),1.3354673,0.24057919,0.51599735,1.793666,0.99,2,891,802,89,802,0,0,89
-mimic_GPT4TAGG_embedding,0.9068462401795735,N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),1.3234435,0.23038001,0.516649,1.7142986,0.99,2,891,808,83,808,0,0,83
-mimic_GPT4oAGG_embedding,0.920314253647587,N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),1.3693763,0.24316141,0.5313231,1.8575917,0.99,2,891,820,71,820,0,0,71
-topic_GPT3AGG_embedding,0.9191919191919192,N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),1.353123,0.23909678,0.6615519,1.8362767,0.99,2,891,819,72,819,0,0,72
-topic_GPT4TAGG_embedding,0.9102132435465768,N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),1.3248482,0.24775937,0.5829355,1.8247087,0.99,2,891,811,80,811,0,0,80
-topic_GPT4oAGG_embedding,0.9113355780022446,N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),N/A (All predictions are the same class),1.3476782,0.24353293,0.66435045,1.8541692,0.99,2,891,812,79,812,0,0,79
+version https://git-lfs.github.com/spec/v1
+oid sha256:d42f316f778183a63d8e428519024fee0cb8d418fe4669e0016a4b8307ddb200
+size 1925

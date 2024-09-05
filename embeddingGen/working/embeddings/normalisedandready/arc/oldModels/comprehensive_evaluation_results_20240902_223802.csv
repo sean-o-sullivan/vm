@@ -1,1 +1,3 @@
-Embedding Type,Accuracy,AUC,Precision,Recall,F1 Score,Mean Distance,Std Distance,Min Distance,Max Distance,Threshold,Unique Predictions,Total Samples,Positive Predictions,Negative Predictions,True Positives,False Positives,True Negatives,False Negatives
+version https://git-lfs.github.com/spec/v1
+oid sha256:7697be0bf58ef5cd8f752e53fed881368c41822b8f6147ec56fbfbf3102842cd
+size 255
