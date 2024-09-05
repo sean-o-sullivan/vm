@@ -10,7 +10,7 @@ df_s = pd.DataFrame(columns=['anchor_embedding', 'mimic_GPT3AGG_embedding', 'mim
                              'mimic_GPT4oAGG_embedding', 'topic_GPT3AGG_embedding', 
                              'topic_GPT4TAGG_embedding', 'topic_GPT4oAGG_embedding'])
 
-`total_matches = 0
+total_matches = 0
 start_time = time.time()
 
 for index, row in tqdm(df_a.iterrows(), total=df_a.shape[0], desc="Processing rows"):
