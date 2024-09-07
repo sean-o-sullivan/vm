@@ -108,39 +108,48 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
 
     fig = go.Figure()
 
+
+    unique_authors = list(set(authors))
+    author_color_dict = {author: color_palette[i % len(color_palette)] for i, author in enumerate(unique_authors)}
+
+
+    core_info_color_dicts = {}
     for depth in depths:
         core_infos_at_depth = [get_core_info_at_depth(info, depth) for info in core_infos]
         unique_core_infos = list(set(core_infos_at_depth))
-        color_dict = {core_info: color_palette[i % len(color_palette)] for i, core_info in enumerate(unique_core_infos)}
+        core_info_color_dicts[depth] = {core_info: color_palette[i % len(color_palette)] for i, core_info in enumerate(unique_core_infos)}
 
-        for core_info in unique_core_infos:
-            core_info_mask = np.array(core_infos_at_depth) == core_info
-            fig.add_trace(go.Scatter3d(
-                x=embeddings_3d[core_info_mask, 0],
-                y=embeddings_3d[core_info_mask, 1],
-                z=embeddings_3d[core_info_mask, 2],
-                mode='markers',
-                marker=dict(
-                    size=4,
-                    color=color_dict[core_info],
-                    opacity=opacity
-                ),
-                text=[f"Core Info: {core_info}" for _ in range(sum(core_info_mask))],
-                hoverinfo='text',
-                name=f"Depth {depth}: {core_info}",
-                customdata=np.array([[core_info]] * sum(core_info_mask)),
-                hoverlabel=dict(namelength=-1),
-                visible=(depth == depths[0])  
-            ))
 
-    
+    for depth in depths:
+        core_infos_at_depth = [get_core_info_at_depth(info, depth) for info in core_infos]
+        
+        fig.add_trace(go.Scatter3d(
+            x=embeddings_3d[:, 0],
+            y=embeddings_3d[:, 1],
+            z=embeddings_3d[:, 2],
+            mode='markers',
+            marker=dict(
+                size=4,
+                color=[core_info_color_dicts[depth].get(ci, 'lightgrey') for ci in core_infos_at_depth],
+                opacity=opacity
+            ),
+            text=[f"Core Info: {ci}<br>Author: {a}" for ci, a in zip(core_infos_at_depth, authors)],
+            hoverinfo='text',
+            name=f"Depth {depth}",
+            customdata=np.array(list(zip(core_infos_at_depth, authors))),
+            hoverlabel=dict(namelength=-1),
+            visible=(depth == depths[0])  
+
+
+        ))
+
     updatemenus = list([
         dict(
             active=0,
             buttons=list([
                 dict(label=f'Depth {depth}',
                      method='update',
-                     args=[{'visible': [trace.name.startswith(f'Depth {depth}:') for trace in fig.data]},
+                     args=[{'visible': [trace.name == f'Depth {depth}' for trace in fig.data]},
                            {'title': f'3D UMAP visualization at Core Info Depth {depth}'}])
                 for depth in depths
             ]),
@@ -158,7 +167,41 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
         ),
     ])
 
+
     
+
+
+    updatemenus.append(
+        dict(
+            active=0,
+            buttons=list([
+                dict(label='Color by Core Info',
+                     method='update',
+                     args=[{'marker.color': [[core_info_color_dicts[int(trace.name.split()[-1])].get(ci, 'lightgrey') for ci in trace.customdata[:, 0]] for trace in fig.data]},
+                           {'showlegend': True}]),
+                dict(label='Color by Author',
+                     method='update',
+                     args=[{'marker.color': [[author_color_dict.get(a, 'lightgrey') for a in trace.customdata[:, 1]] for trace in fig.data]},
+                           {'showlegend': True}])
+            ]),
+            direction="down",
+            pad={"r": 10, "t": 10},
+            showactive=True,
+            x=0.05,
+            xanchor="left",
+            y=1.25,
+            yanchor="top",
+            bgcolor='rgba(255, 255, 255, 0.7)',
+            bordercolor='rgba(0, 0, 0, 0.5)',
+            borderwidth=1,
+            font=dict(size=12)
+        )
+    )
+
+
+    
+
+
     updatemenus.append(
         dict(
             type="buttons",
@@ -169,9 +212,11 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
                 args=[{"scene.camera": dict(eye=dict(x=1.25, y=1.25, z=1.25))}]
             )],
             pad={"r": 10, "t": 10},
-            x=0.05,
-            xanchor="left",
-            y=1.05,
+            x=0.95,
+            xanchor="right",
+            y=1.05,  
+
+
             yanchor="top",
             bgcolor='rgba(255, 255, 255, 0.7)',
             bordercolor='rgba(0, 0, 0, 0.5)',
@@ -179,6 +224,30 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
             font=dict(size=12)
         )
     )
+
+    for depth in depths:
+        core_infos_at_depth = [get_core_info_at_depth(info, depth) for info in core_infos]
+        unique_core_infos = list(set(core_infos_at_depth))
+        for core_info in unique_core_infos:
+            fig.add_trace(go.Scatter3d(
+                x=[None], y=[None], z=[None],
+                mode='markers',
+                marker=dict(size=6, color=core_info_color_dicts[depth].get(core_info, 'lightgrey')),
+                name=core_info,
+                showlegend=True,
+                visible=(depth == depths[0])
+            ))
+
+    for author in unique_authors:
+        fig.add_trace(go.Scatter3d(
+            x=[None], y=[None], z=[None],
+            mode='markers',
+            marker=dict(size=6, color=author_color_dict.get(author, 'lightgrey')),
+            name=author,
+            showlegend=True,
+            visible=False
+        ))
+
 
     fig.update_layout(
         updatemenus=updatemenus,
@@ -203,18 +272,32 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
         hovermode="closest",
         paper_bgcolor='white',
         plot_bgcolor='white',
-        margin=dict(t=100, l=0, r=0, b=0)
+        margin=dict(t=100, l=0, r=0, b=0),
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.05,
+            bgcolor='rgba(255, 255, 255, 0.7)',
+            bordercolor='rgba(255, 255, 255, 0)',  
+
+
+            borderwidth=0
+        ),
+        showlegend=True
     )
+
 
     fig.update_layout(
         annotations=[dict(
-            text="Hover over points to see core info",
+            text="Hover over points to see core info and author",
             xref="paper", yref="paper",
             x=0.5, y=1.02,
             showarrow=False,
             font=dict(size=14)
         )]
     )
+
 
     config = {'responsive': True}
     fig.write_html(output_file, include_plotlyjs='cdn', config=config)
@@ -255,7 +338,9 @@ if __name__ == "__main__":
     
     embeddings, core_infos = process_embeddings(siamese_net, dataloader, device)
 
-   
-    visualize_embeddings_3d_umap(embeddings, core_infos, depths=[1, 2, 3], output_file="core_info_embeddings_3d_umap_Ainteractive.html", opacity=1)
+
+    authors = dataset.data['author'].tolist()
+
+    visualize_embeddings_3d_umap(embeddings, core_infos, authors, depths=[1, 2, 3], output_file="coere_info_embeddings_3d_umap_interactive.html", opacity=1)
 
     print(f"\nProcessing completed! Interactive UMAP Visualization saved to core_info_embeddings_3d_umap_Ainteractive.html")
