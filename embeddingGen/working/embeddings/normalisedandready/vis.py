@@ -55,14 +55,10 @@ class EmbeddingDataset(Dataset):
     def preprocess_data(self):
         
         self.data[self.value_columns] = self.data[self.value_columns].apply(pd.to_numeric, errors='coerce')
-       
-        
         nan_columns = self.data[self.value_columns].columns[self.data[self.value_columns].isna().any()].tolist()
         if nan_columns:
             print(f"Warning: NaN values found in the following columns: {nan_columns}")
             print("These values will be replaced with 0.0")
-       
-        
         self.data[self.value_columns] = self.data[self.value_columns].fillna(0.0)
 
     def get_column_info(self):
@@ -78,26 +74,19 @@ def process_embeddings(model, dataloader, device):
     model.eval()
     all_embeddings = []
     all_core_info = []
-   
     with torch.no_grad():
         for embeddings, core_info in tqdm(dataloader, desc="Processing embeddings"):
             embeddings = embeddings.to(device)
             encoded_embeddings = model(embeddings)
             all_embeddings.append(encoded_embeddings.cpu().numpy())
             all_core_info.extend(core_info)
-   
     all_embeddings = np.concatenate(all_embeddings, axis=0)
     return all_embeddings, all_core_info
-
-
-
-
-
-
 
 def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, opacity=0.8):
     reducer = umap.UMAP(n_components=3, random_state=42)
     embeddings_3d = reducer.fit_transform(embeddings)
+   
     color_palette = [
         '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
         '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
@@ -108,8 +97,23 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
     fig = go.Figure()
 
     unique_authors = list(set(authors))
-    author_color_dict = {author: color_palette[i % len(color_palette)] for i, author in enumerate(unique_authors)}
+    author_color_dict = {author: color_palette[i % len(color_palette)]
+                         for i, author in enumerate(unique_authors)}
+   
+    
 
+    author_legend_names = {}
+    author_name_counts = {}
+    for author in authors:
+        author_name_counts[author] = author_name_counts.get(author, 0) + 1
+    for author in unique_authors:
+        count = author_name_counts[author]
+        if count > 1:
+            
+
+            author_legend_names[author] = f"{author}"
+        else:
+            author_legend_names[author] = author
 
     core_info_color_dicts = {}
     for depth in depths:
@@ -118,8 +122,9 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
         core_info_color_dicts[depth] = {core_info: color_palette[i % len(color_palette)]
                                       for i, core_info in enumerate(unique_core_infos)}
 
+    data_trace_indices = {}
+    trace_index = 0
     
-
     fig.add_trace(go.Scatter3d(
         x=embeddings_3d[:, 0],
         y=embeddings_3d[:, 1],
@@ -137,6 +142,8 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
         hoverlabel=dict(namelength=-1),
         visible=False
     ))
+    data_trace_indices['Author'] = trace_index
+    trace_index += 1
 
     
 
@@ -159,45 +166,93 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
             hoverlabel=dict(namelength=-1),
             visible=False
         ))
+        data_trace_indices[f'Depth {depth}'] = trace_index
+        trace_index += 1
 
     
 
-    fig.data[1].visible = True  
+    legend_trace_indices = {}
+    author_legend_indices = []
+    for author in unique_authors:
+        fig.add_trace(go.Scatter3d(
+            x=[None], y=[None], z=[None],
+            mode='markers',
+            marker=dict(size=6, color=author_color_dict[author]),
+            name=author_legend_names[author],  
 
+            showlegend=True,
+            visible=False  
+
+        ))
+        author_legend_indices.append(trace_index)
+        trace_index += 1
+    legend_trace_indices['Author'] = author_legend_indices
 
     
 
-    buttons = [
-        dict(
-            label='Author',
-            method='update',
-            args=[{
-                'visible': [i == 0 for i in range(len(fig.data))],
-                'showlegend': True
-            }, {
-                'title': '3D UMAP visualization - By Author'
-            }]
-        )
-    ]
-   
+    for depth in depths:
+        core_infos_at_depth = [get_core_info_at_depth(info, depth) for info in core_infos]
+        unique_core_infos = sorted(set(core_infos_at_depth))
+        core_info_legend_indices = []
+        for core_info in unique_core_infos:
+            fig.add_trace(go.Scatter3d(
+                x=[None], y=[None], z=[None],
+                mode='markers',
+                marker=dict(size=6, color=core_info_color_dicts[depth][core_info]),
+                name=core_info,
+                showlegend=True,
+                visible=False  
+
+            ))
+            core_info_legend_indices.append(trace_index)
+            trace_index +=1
+        legend_trace_indices[f'Depth {depth}'] = core_info_legend_indices
+
     
 
-    for i, depth in enumerate(depths, 1):
+    total_traces = len(fig.data)
+    buttons = []
+
+    
+
+    visible_author = [False] * total_traces
+    visible_author[data_trace_indices['Author']] = True
+    for idx in legend_trace_indices['Author']:
+        visible_author[idx] = True
+    buttons.append(dict(
+        label='Author',
+        method='update',
+        args=[{'visible': visible_author},
+              {'title': '3D UMAP visualization - By Author'}]
+    ))
+
+    
+
+    for depth in depths:
+        visible = [False] * total_traces
+        visible[data_trace_indices[f'Depth {depth}']] = True
+        for idx in legend_trace_indices[f'Depth {depth}']:
+            visible[idx] = True
         buttons.append(dict(
             label=f'Depth {depth}',
             method='update',
-            args=[{
-                'visible': [i == j for j in range(len(fig.data))],
-                'showlegend': True
-            }, {
-                'title': f'3D UMAP visualization - Depth {depth}'
-            }]
+            args=[{'visible': visible},
+                  {'title': f'3D UMAP visualization - Depth {depth}'}]
         ))
 
     
 
+    for idx, vis in enumerate(visible_author):
+        fig.data[idx].visible = vis
+
+    
+
+    fig.update_layout(title='3D UMAP visualization - By Author')
+
+    
+
     updatemenus = [dict(
-        active=1,  
+        active=0,  
 
         buttons=buttons,
         direction="down",
@@ -236,39 +291,10 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
 
     
 
-    for author in unique_authors:
-        fig.add_trace(go.Scatter3d(
-            x=[None], y=[None], z=[None],
-            mode='markers',
-            marker=dict(size=6, color=author_color_dict[author]),
-            name=author,
-            showlegend=True,
-            visible=False
-        ))
-
-    
-
-    for depth in depths:
-        core_infos_at_depth = [get_core_info_at_depth(info, depth) for info in core_infos]
-        unique_core_infos = sorted(set(core_infos_at_depth))
-        for core_info in unique_core_infos:
-            fig.add_trace(go.Scatter3d(
-                x=[None], y=[None], z=[None],
-                mode='markers',
-                marker=dict(size=6, color=core_info_color_dicts[depth][core_info]),
-                name=core_info,
-                showlegend=True,
-                visible=False
-            ))
-
-    
-
-
-
     fig.update_layout(
         updatemenus=updatemenus,
         title=dict(
-            text="3D UMAP visualization - Depth 1",
+            text="3D UMAP visualization - By Author",
             y=0.95,
             x=0.5,
             xanchor='center',
@@ -282,18 +308,14 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
             xaxis=dict(showgrid=False, backgroundcolor='white'),
             yaxis=dict(showgrid=False, backgroundcolor='white'),
             zaxis=dict(showgrid=False, backgroundcolor='white'),
-            
-
-            domain=dict(x=[0, 0.85], y=[0.2, 1])  
+            domain=dict(x=[0.1, 0.85], y=[0.2, 1])  
 
         ),
         width=1500,
-        height=800,
+        height=900,
         hovermode="closest",
         paper_bgcolor='white',
         plot_bgcolor='white',
-        
-
         margin=dict(t=100, l=0, r=200, b=0),  
 
         showlegend=True,
@@ -323,17 +345,6 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
 
     
 
-    for trace in fig.data[len(depths) + 1:]:  
-
-        trace.visible = False
-   
-    
-
-    depth1_start = len(depths) + 1 + len(unique_authors)
-    depth1_end = depth1_start + len(set(get_core_info_at_depth(info, 1) for info in core_infos))
-    for i in range(depth1_start, depth1_end):
-        fig.data[i].visible = True
-
     config = {'responsive': True}
     fig.write_html(output_file, include_plotlyjs='cdn', config=config)
     print(f"Interactive 3D UMAP visualization saved to {output_file}")
@@ -341,20 +352,31 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
 
 
 if __name__ == "__main__":
-   
-   hidden_size = 256
-   batch_size = 128
-   current_dir = os.getcwd()
-   dataset = EmbeddingDataset(os.path.join(current_dir, "GG_100_updated_core_info_only.csv"))
-   dataset.preprocess_data()  
+    
+
+    hidden_size = 256
+    batch_size = 128
+
+    
+
+    current_dir = os.getcwd()
+    dataset = EmbeddingDataset(os.path.join(current_dir, "GG_100_updated_core_info_only.csv"))
+    dataset.preprocess_data()  
+
+
+    
 
     print(dataset.get_column_info())
+
+    
+
     input_size = len(dataset.value_columns)
     print(f"Input size: {input_size}")
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0)
+    dataset.data['author'] = dataset.data['author'].fillna('Unknown')
+    authors = dataset.data['author'].tolist()
 
-    
+    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=0)
     model_path = os.path.join(current_dir, "BnG_10_best_transformer_siamese_model.pth")
     checkpoint = torch.load(model_path, map_location=device)
 
@@ -363,13 +385,15 @@ if __name__ == "__main__":
     siamese_net.eval()
 
     print("Starting Embedding Processing...")
-
-    
     embeddings, core_infos = process_embeddings(siamese_net, dataloader, device)
 
-
-    authors = dataset.data['author'].tolist()
-
-    visualize_embeddings_3d_umap(embeddings, core_infos, authors, depths=[1, 2, 3], output_file="coere_info_embeddings_3d_umap_interactive.html", opacity=1)
+    visualize_embeddings_3d_umap(
+        embeddings,
+        core_infos,
+        authors,
+        depths=[1, 2, 3],
+        output_file="core_info_embeddings_3d_umap_interactive.html",
+        opacity=1
+    )
 
     print(f"\nProcessing completed! Interactive UMAP Visualization saved to core_info_embeddings_3d_umap_Ainteractive.html")
