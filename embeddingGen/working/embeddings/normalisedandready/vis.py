@@ -323,7 +323,8 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, authors, depths, output
             font=dict(size=10),
             itemsizing='constant',  
             itemclick=False,  
-            valign='top'  
+            valign='top',
+            itemdoubleclick=False
         )
     )
 
