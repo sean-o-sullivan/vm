@@ -83,7 +83,7 @@ def process_embeddings(model, dataloader, device):
     all_embeddings = np.concatenate(all_embeddings, axis=0)
     return all_embeddings, all_core_info
 
-def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, opacity=0.8):
+def visualize_embeddings_3d_umap(embeddings, core_infos, authors, depths, output_file, opacity=0.8):
     reducer = umap.UMAP(n_components=3, random_state=42)
     embeddings_3d = reducer.fit_transform(embeddings)
    
@@ -108,12 +108,7 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
         author_name_counts[author] = author_name_counts.get(author, 0) + 1
     for author in unique_authors:
         count = author_name_counts[author]
-        if count > 1:
-            
-
-            author_legend_names[author] = f"{author}"
-        else:
-            author_legend_names[author] = author
+        author_legend_names[author] = author  
 
     core_info_color_dicts = {}
     for depth in depths:
@@ -308,27 +303,27 @@ def visualize_embeddings_3d_umap(embeddings, core_infos, depths, output_file, op
             xaxis=dict(showgrid=False, backgroundcolor='white'),
             yaxis=dict(showgrid=False, backgroundcolor='white'),
             zaxis=dict(showgrid=False, backgroundcolor='white'),
-            domain=dict(x=[0.1, 0.85], y=[0.2, 1])  
-
+            domain=dict(x=[0.2, 0.88], y=[0.5, 1])  
         ),
-        width=1500,
-        height=900,
+        width=1600,  
+        height=1200,  
         hovermode="closest",
         paper_bgcolor='white',
         plot_bgcolor='white',
-        margin=dict(t=100, l=0, r=200, b=0),  
-
+        margin=dict(t=100, l=0, r=300, b=0),  
         showlegend=True,
         legend=dict(
             yanchor="top",
-            y=0.99,
+            y=1.0,
             xanchor="left",
-            x=0.88,  
-
+            x=1.02,  
             bgcolor='rgba(255, 255, 255, 0.7)',
             bordercolor='rgba(0, 0, 0, 0.1)',
             borderwidth=1,
-            font=dict(size=10)
+            font=dict(size=10),
+            itemsizing='constant',  
+            itemclick=False,  
+            valign='top'  
         )
     )
 
@@ -392,7 +387,7 @@ if __name__ == "__main__":
         core_infos,
         authors,
         depths=[1, 2, 3],
-        output_file="core_info_embeddings_3d_umap_interactive.html",
+        output_file="corse_info_embeddings_3d_umap_interactive.html",
         opacity=1
     )
 
