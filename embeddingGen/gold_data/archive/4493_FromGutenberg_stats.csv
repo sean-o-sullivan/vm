@@ -1,27 +1,3 @@
-Statistic,Count
-square_brackets_removed,21549
-equations_removed,247
-number_sequences_removed,5757
-quotes_normalized,39689
-footnote_markers_removed,96716
-fractions_normalized,12183
-spaces_normalized,903391
-repeated_punctuation_removed,2247
-empty_parentheses_removed,1472
-single_letter_parentheses_removed,755
-extra_spaces_removed,14411
-citations_removed,286
-curly_braces_removed,1740
-unicode_characters_removed,20559
-figure_references_removed,267
-asterisks_removed,3967
-dashes_normalized,1517
-tables_removed,115
-table_like_structures_removed,266
-excessive_whitespace_lines_removed,106
-html_tags_removed,17
-apostrophes_normalized,89
-trademark_symbols_removed,7
-urls_removed,13
-email_addresses_removed,5
-special_characters_removed,23
+version https://git-lfs.github.com/spec/v1
+oid sha256:55930d652b0c5f2a1dc2b96e4906c3255f3f6bea0853decaed00fba202df4609
+size 758
